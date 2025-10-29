@@ -27,10 +27,18 @@ class ProductPlannerPortal(CustomerPortal):
         report_name = 'custom_certifica_portal.print_qr'
 
         urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
+        
+        # Detectar si estamos en entorno de desarrollo
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+            
         if strurlruta=='personas':
-            xurldownload = str(urlbase.value)+'/web/certificado_current/download_pdf/'+str(idcertificado)
+            xurldownload = base_url+'/web/certificado_current/download_pdf/'+str(idcertificado)
         else:
-            xurldownload = str(urlbase.value)+'/web/ultimocertificado/'+str(strurlruta)+'/'+str(xid)+'/'+str(xuserid)
+            xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta)+'/'+str(xid)+'/'+str(xuserid)
         if strurl=='print_qr15':
             w=63
             h=63
@@ -448,7 +456,15 @@ class ProductPlannerPortal(CustomerPortal):
             xultimcertificado=list_certificado_documento_id[0].codigocliente
 
         urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
-        xurldownload = str(urlbase.value)+'/web/ultimocertificado/'+str(strurl)+'/'+str(strmaquinara_id)+'/'+str(partner_id.id)
+        
+        # Detectar si estamos en entorno de desarrollo
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+            
+        xurldownload = base_url+'/web/ultimocertificado/'+str(strurl)+'/'+str(strmaquinara_id)+'/'+str(partner_id.id)
 
         ultimocert = {
             'fecha_vigencia' :  xfecvigencia,
