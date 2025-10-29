@@ -130,7 +130,7 @@ class ProductPlannerPortal(CustomerPortal):
         userid = kwargs.get('userid')
         
         # Logging para diagnóstico
-        _logger.info(f"download_certificado_ultimo_pdf - Parámetros recibidos: ruta_url={strurl}, id={strmaquinara_id}, userid={userid}")
+        _logger.info("download_certificado_ultimo_pdf - Parámetros recibidos: ruta_url=%s, id=%s, userid=%s" % (strurl, strmaquinara_id, userid))
         
         # Validación de parámetros obligatorios
         if not strurl:
@@ -138,24 +138,24 @@ class ProductPlannerPortal(CustomerPortal):
             return self._return_error_response("Parámetro ruta_url requerido")
             
         if not strmaquinara_id or strmaquinara_id == 'False':
-            _logger.error(f"download_certificado_ultimo_pdf - Parámetro id inválido: {strmaquinara_id}")
+            _logger.error("download_certificado_ultimo_pdf - Parámetro id inválido: %s" % strmaquinara_id)
             return self._return_error_response("ID de registro inválido")
             
         if not userid or userid == 'False':
-            _logger.error(f"download_certificado_ultimo_pdf - Parámetro userid inválido: {userid}")
+            _logger.error("download_certificado_ultimo_pdf - Parámetro userid inválido: %s" % userid)
             return self._return_error_response("ID de usuario inválido")
 
         # Buscar tipo de documento
         tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', strurl)],limit=1)
         if not tiposdocumentos:
-            _logger.error(f"download_certificado_ultimo_pdf - Tipo de documento no encontrado para ruta: {strurl}")
+            _logger.error("download_certificado_ultimo_pdf - Tipo de documento no encontrado para ruta: %s" % strurl)
             return self._return_error_response("Tipo de documento no encontrado")
         
         # Conversión segura para evitar excepciones cuando los parámetros no son numéricos
         registro_id = int(strmaquinara_id) if strmaquinara_id and str(strmaquinara_id).isdigit() else False
         cliente_id = int(userid) if userid and str(userid).isdigit() else False
         
-        _logger.info(f"download_certificado_ultimo_pdf - IDs convertidos: registro_id={registro_id}, cliente_id={cliente_id}, tipo_doc_id={tiposdocumentos.id}")
+        _logger.info("download_certificado_ultimo_pdf - IDs convertidos: registro_id=%s, cliente_id=%s, tipo_doc_id=%s" % (registro_id, cliente_id, tiposdocumentos.id))
         
         # Búsqueda del certificado
         if strurl=='personas':
@@ -167,15 +167,15 @@ class ProductPlannerPortal(CustomerPortal):
                      ('xmaquinaria', '=', registro_id),
                      ('cliente_id', '=', cliente_id)]
         
-        _logger.info(f"download_certificado_ultimo_pdf - Dominio de búsqueda: {domain}")
+        _logger.info("download_certificado_ultimo_pdf - Dominio de búsqueda: %s" % domain)
         
         slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc',limit=1)
         
         if not slide_slide_obj:
-            _logger.error(f"download_certificado_ultimo_pdf - No se encontró certificado con dominio: {domain}")
+            _logger.error("download_certificado_ultimo_pdf - No se encontró certificado con dominio: %s" % domain)
             return self._return_error_response("Certificado no encontrado")
         
-        _logger.info(f"download_certificado_ultimo_pdf - Certificado encontrado: ID={slide_slide_obj.id}")
+        _logger.info("download_certificado_ultimo_pdf - Certificado encontrado: ID=%s" % slide_slide_obj.id)
 
         # Determinar nombre del archivo
         if slide_slide_obj.file_name_certificado:
@@ -189,7 +189,7 @@ class ProductPlannerPortal(CustomerPortal):
         # Verificar si existe el archivo PDF
         r = slide_slide_obj.x_certificado_publicado_file
         if not r:
-            _logger.error(f"download_certificado_ultimo_pdf - Certificado ID={slide_slide_obj.id} no tiene archivo PDF")
+            _logger.error("download_certificado_ultimo_pdf - Certificado ID=%s no tiene archivo PDF" % slide_slide_obj.id)
             return self._return_error_response("El certificado no tiene archivo PDF asociado")
 
         # Generar respuesta exitosa
@@ -198,31 +198,31 @@ class ProductPlannerPortal(CustomerPortal):
         response.data = base64.b64decode(r)
         response.mimetype = 'application/pdf'
         
-        _logger.info(f"download_certificado_ultimo_pdf - PDF generado exitosamente: {filename}")
+        _logger.info("download_certificado_ultimo_pdf - PDF generado exitosamente: %s" % filename)
         return response
     
     def _return_error_response(self, error_message):
         """Retorna una respuesta de error HTML en lugar de PDF vacío"""
-        html_content = f"""
+        html_content = """
         <!DOCTYPE html>
         <html>
         <head>
             <title>Error</title>
             <meta charset="utf-8">
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 50px; text-align: center; }}
-                .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 5px; }}
+                body { font-family: Arial, sans-serif; margin: 50px; text-align: center; }
+                .error { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 5px; }
             </style>
         </head>
         <body>
             <div class="error">
                 <h2>Error al cargar el certificado</h2>
-                <p>{error_message}</p>
+                <p>%s</p>
                 <button onclick="history.back()">Volver</button>
             </div>
         </body>
         </html>
-        """
+        """ % error_message
         response = werkzeug.wrappers.Response(html_content)
         response.mimetype = 'text/html'
         response.status_code = 400
