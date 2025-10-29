@@ -51,12 +51,14 @@ class ProductPlannerPortal(CustomerPortal):
         }
 
         response = werkzeug.wrappers.Response()
+        # Manejo seguro de conversiones a entero para evitar ValueError cuando el parámetro es 'False' u otro valor no numérico
+        xid_int = int(xid) if xid and str(xid).isdigit() else False
         if strurlruta=='personas':
             certificado = request.env['informes.encuestas.merge'].sudo().search(
-                [('personas_id', '=', int(xid))], order='fecha_vigencia desc',limit=1)
+                [('personas_id', '=', xid_int)], order='fecha_vigencia desc',limit=1)
         else:
             certificado = request.env['informes.encuestas.merge'].sudo().search(
-                [('xmaquinaria', '=', int(xid))], order='fecha_vigencia desc',limit=1)
+                [('xmaquinaria', '=', xid_int)], order='fecha_vigencia desc',limit=1)
 
         r = certificado
         if r:
@@ -127,16 +129,19 @@ class ProductPlannerPortal(CustomerPortal):
         strmaquinara_id = kwargs.get('id')
         tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', strurl)],limit=1)
         userid = kwargs.get('userid')
+        # Conversión segura para evitar excepciones cuando los parámetros no son numéricos
+        registro_id = int(strmaquinara_id) if strmaquinara_id and str(strmaquinara_id).isdigit() else False
+        cliente_id = int(userid) if userid and str(userid).isdigit() else False
         if strurl=='personas':
             slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(
                 [('xtipodocumento', '=', tiposdocumentos.id),
-                 ('personas_id', '=', int(strmaquinara_id)),
-                 ('cliente_id', '=', int(userid))], order='fecha_vigencia desc',limit=1)
+                 ('personas_id', '=', registro_id),
+                 ('cliente_id', '=', cliente_id)], order='fecha_vigencia desc',limit=1)
         else:
             slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(
                 [('xtipodocumento', '=', tiposdocumentos.id),
-                 ('xmaquinaria', '=', int(strmaquinara_id)),
-                 ('cliente_id', '=', int(userid))], order='fecha_vigencia desc',limit=1)
+                 ('xmaquinaria', '=', registro_id),
+                 ('cliente_id', '=', cliente_id)], order='fecha_vigencia desc',limit=1)
 
         if slide_slide_obj.file_name_certificado:
             filename = slide_slide_obj.file_name_certificado
