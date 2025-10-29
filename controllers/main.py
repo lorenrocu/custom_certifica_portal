@@ -216,8 +216,7 @@ class ProductPlannerPortal(CustomerPortal):
         else:
             filename = 'PATRON_SIN_NOMBRE.pdf'
 
-        # Forzar visualización embebida en navegador/iframe
-        headers=[('Content-Type', 'application/pdf'),('Content-Disposition', 'inline; filename="%s"' % filename)]
+        headers=[('Content-Type', 'application/pdf'),('Content-Disposition', 'filename='+filename)]
         response = werkzeug.wrappers.Response(headers=headers)
 
         r = equipo.certificado_calibracion
@@ -243,8 +242,7 @@ class ProductPlannerPortal(CustomerPortal):
 
         r = certificado.x_certificado_publicado_file
 
-        # Forzar visualización embebida en navegador/iframe
-        headers=[('Content-Type', 'application/pdf'),('Content-Disposition', 'inline; filename="%s"' % filename)]
+        headers=[('Content-Type', 'application/pdf'),('Content-Disposition', 'filename='+filename)]
         response = werkzeug.wrappers.Response(headers=headers)
 
 
@@ -342,8 +340,7 @@ class ProductPlannerPortal(CustomerPortal):
             return self._return_error_response("El certificado no tiene archivo PDF asociado")
 
         # Generar respuesta exitosa
-        # Forzar visualización embebida en navegador/iframe
-        headers=[('Content-Type', 'application/pdf'),('Content-Disposition', 'inline; filename="%s"' % filename)]
+        headers=[('Content-Type', 'application/pdf'),('Content-Disposition', 'filename='+filename)]
         response = werkzeug.wrappers.Response(headers=headers)
         response.data = base64.b64decode(r)
         response.mimetype = 'application/pdf'
