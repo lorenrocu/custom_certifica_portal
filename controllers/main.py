@@ -129,6 +129,18 @@ class ProductPlannerPortal(CustomerPortal):
         xuserid = kwargs.get('userid')
         report_name = 'custom_certifica_portal.print_qr'
 
+        _logger.info("print_qrcode - Generando QR para tipo: '%s'" % strurlruta)
+
+        # APLICAR BÚSQUEDA DINÁMICA PARA QR ANTIGUOS Y NUEVOS
+        tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
+        
+        if not tiposdocumentos:
+            _logger.error("print_qrcode - Tipo de documento no encontrado para: '%s'" % strurlruta)
+            return self._return_error_response("No se puede generar QR: Tipo de documento '%s' no encontrado" % strurlruta)
+        
+        if strurlruta != strurlruta_final:
+            _logger.info("print_qrcode - Tipo mapeado: '%s' -> '%s'" % (strurlruta, strurlruta_final))
+
         urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
         
         # Detectar si estamos en entorno de desarrollo
@@ -138,10 +150,11 @@ class ProductPlannerPortal(CustomerPortal):
         elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
             base_url = 'https://tienda-desa.certificalatam.com'
             
-        if strurlruta=='personas':
+        # Usar el tipo final (mapeado si es necesario) para generar la URL
+        if strurlruta_final=='personas':
             xurldownload = base_url+'/web/certificado_current/download_pdf/'+str(idcertificado)
         else:
-            xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta)+'/'+str(xid)+'/'+str(xuserid)
+            xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta_final)+'/'+str(xid)+'/'+str(xuserid)
         if strurl=='print_qr15':
             w=63
             h=63
