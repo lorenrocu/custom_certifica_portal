@@ -16,6 +16,86 @@ _logger = getLogger(__name__)
 class ProductPlannerPortal(CustomerPortal):
     _inherit = 'ir.actions.report'
 
+    def _buscar_tipo_documento_dinamico(self, strurl):
+        """
+        Busca un tipo de documento de forma dinámica.
+        Si no encuentra el tipo exacto, busca similitudes inteligentes.
+        """
+        # Buscar tipo exacto primero
+        tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', strurl)],limit=1)
+        
+        if tiposdocumentos:
+            return tiposdocumentos, strurl
+        
+        # COMPATIBILIDAD DINÁMICA CON QR ANTIGUOS
+        _logger.info("_buscar_tipo_documento_dinamico - Tipo '%s' no encontrado, buscando coincidencias dinámicas..." % strurl)
+        
+        # Obtener todos los tipos disponibles
+        todos_tipos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True)])
+        tipos_disponibles = [tipo.code for tipo in todos_tipos]
+        
+        _logger.info("_buscar_tipo_documento_dinamico - Tipos disponibles: %s" % tipos_disponibles)
+        
+        # Función para calcular similitud entre strings
+        def calcular_similitud(str1, str2):
+            # Convertir a minúsculas para comparación
+            s1, s2 = str1.lower(), str2.lower()
+            
+            # Coincidencia exacta
+            if s1 == s2:
+                return 100
+            
+            # Uno contiene al otro
+            if s1 in s2 or s2 in s1:
+                return 80
+            
+            # Buscar palabras clave comunes
+            palabras_clave = {
+                'medicion': ['medicion', 'equipo', 'equipos', 'izaje', 'elementos'],
+                'personas': ['persona', 'personal', 'trabajador'],
+                'fisicos': ['fisico', 'physical'],
+                'quimicos': ['quimico', 'chemical'],
+                'biologicos': ['biologico', 'biological'],
+                'ergonomico': ['ergonomico', 'psicosocial']
+            }
+            
+            for categoria, keywords in palabras_clave.items():
+                if any(kw in s1 for kw in keywords) and categoria in s2:
+                    return 70
+                if any(kw in s2 for kw in keywords) and categoria in s1:
+                    return 70
+            
+            # Similitud por caracteres comunes
+            chars_comunes = len(set(s1) & set(s2))
+            max_chars = max(len(s1), len(s2))
+            if max_chars > 0:
+                return (chars_comunes / max_chars) * 50
+            
+            return 0
+        
+        # Buscar el mejor match
+        mejor_match = None
+        mejor_score = 0
+        
+        for tipo_disponible in tipos_disponibles:
+            score = calcular_similitud(strurl, tipo_disponible)
+            _logger.info("_buscar_tipo_documento_dinamico - Similitud '%s' vs '%s': %d%%" % (strurl, tipo_disponible, score))
+            
+            if score > mejor_score and score >= 60:  # Umbral mínimo de similitud
+                mejor_score = score
+                mejor_match = tipo_disponible
+        
+        # Si encontramos un match válido, usarlo
+        if mejor_match:
+            _logger.info("_buscar_tipo_documento_dinamico - MATCH ENCONTRADO: '%s' -> '%s' (similitud: %d%%)" % (strurl, mejor_match, mejor_score))
+            tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', mejor_match)],limit=1)
+            if tiposdocumentos:
+                _logger.info("_buscar_tipo_documento_dinamico - Mapeo dinámico exitoso: '%s' -> '%s'" % (strurl, mejor_match))
+                return tiposdocumentos, mejor_match
+        
+        _logger.warning("_buscar_tipo_documento_dinamico - No se encontró ningún tipo similar a '%s'" % strurl)
+        return None, strurl
+
     @http.route(['/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>',
                  '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>'], type='http', auth="user",website=True)
     def print_qrcode(self,**kwargs):
@@ -153,8 +233,9 @@ class ProductPlannerPortal(CustomerPortal):
             _logger.error("download_certificado_ultimo_pdf - Parámetro userid inválido: %s" % userid)
             return self._return_error_response("ID de usuario inválido")
 
-        # Buscar tipo de documento
-        tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', strurl)],limit=1)
+        # Buscar tipo de documento dinámicamente
+        tiposdocumentos, strurl = self._buscar_tipo_documento_dinamico(strurl)
+        
         if not tiposdocumentos:
             _logger.error("download_certificado_ultimo_pdf - Tipo de documento no encontrado para ruta: %s" % strurl)
             return self._return_error_response("Tipo de documento no encontrado")
@@ -424,7 +505,9 @@ class ProductPlannerPortal(CustomerPortal):
             partner_id = request.env.user.partner_id.parent_id
         strurl = kwargs.get('ruta_url')
         strmaquinara_id = kwargs.get('maquinara_id')
-        tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', strurl)],limit=1)
+        
+        # Buscar tipo de documento dinámicamente
+        tiposdocumentos, strurl = self._buscar_tipo_documento_dinamico(strurl)
         stridpage=''
         persona=''
         maquinaria=''
