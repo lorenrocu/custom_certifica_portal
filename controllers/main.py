@@ -127,22 +127,57 @@ class ProductPlannerPortal(CustomerPortal):
 
         strurl = kwargs.get('ruta_url')
         strmaquinara_id = kwargs.get('id')
-        tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', strurl)],limit=1)
         userid = kwargs.get('userid')
+        
+        # Logging para diagnóstico
+        _logger.info(f"download_certificado_ultimo_pdf - Parámetros recibidos: ruta_url={strurl}, id={strmaquinara_id}, userid={userid}")
+        
+        # Validación de parámetros obligatorios
+        if not strurl:
+            _logger.error("download_certificado_ultimo_pdf - Parámetro ruta_url faltante")
+            return self._return_error_response("Parámetro ruta_url requerido")
+            
+        if not strmaquinara_id or strmaquinara_id == 'False':
+            _logger.error(f"download_certificado_ultimo_pdf - Parámetro id inválido: {strmaquinara_id}")
+            return self._return_error_response("ID de registro inválido")
+            
+        if not userid or userid == 'False':
+            _logger.error(f"download_certificado_ultimo_pdf - Parámetro userid inválido: {userid}")
+            return self._return_error_response("ID de usuario inválido")
+
+        # Buscar tipo de documento
+        tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', strurl)],limit=1)
+        if not tiposdocumentos:
+            _logger.error(f"download_certificado_ultimo_pdf - Tipo de documento no encontrado para ruta: {strurl}")
+            return self._return_error_response("Tipo de documento no encontrado")
+        
         # Conversión segura para evitar excepciones cuando los parámetros no son numéricos
         registro_id = int(strmaquinara_id) if strmaquinara_id and str(strmaquinara_id).isdigit() else False
         cliente_id = int(userid) if userid and str(userid).isdigit() else False
+        
+        _logger.info(f"download_certificado_ultimo_pdf - IDs convertidos: registro_id={registro_id}, cliente_id={cliente_id}, tipo_doc_id={tiposdocumentos.id}")
+        
+        # Búsqueda del certificado
         if strurl=='personas':
-            slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(
-                [('xtipodocumento', '=', tiposdocumentos.id),
-                 ('personas_id', '=', registro_id),
-                 ('cliente_id', '=', cliente_id)], order='fecha_vigencia desc',limit=1)
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                     ('personas_id', '=', registro_id),
+                     ('cliente_id', '=', cliente_id)]
         else:
-            slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(
-                [('xtipodocumento', '=', tiposdocumentos.id),
-                 ('xmaquinaria', '=', registro_id),
-                 ('cliente_id', '=', cliente_id)], order='fecha_vigencia desc',limit=1)
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                     ('xmaquinaria', '=', registro_id),
+                     ('cliente_id', '=', cliente_id)]
+        
+        _logger.info(f"download_certificado_ultimo_pdf - Dominio de búsqueda: {domain}")
+        
+        slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc',limit=1)
+        
+        if not slide_slide_obj:
+            _logger.error(f"download_certificado_ultimo_pdf - No se encontró certificado con dominio: {domain}")
+            return self._return_error_response("Certificado no encontrado")
+        
+        _logger.info(f"download_certificado_ultimo_pdf - Certificado encontrado: ID={slide_slide_obj.id}")
 
+        # Determinar nombre del archivo
         if slide_slide_obj.file_name_certificado:
             filename = slide_slide_obj.file_name_certificado
         else:
@@ -151,15 +186,46 @@ class ProductPlannerPortal(CustomerPortal):
             else:
                 filename = 'CERTIFICADO_SIN_CODIGO.pdf'
 
+        # Verificar si existe el archivo PDF
+        r = slide_slide_obj.x_certificado_publicado_file
+        if not r:
+            _logger.error(f"download_certificado_ultimo_pdf - Certificado ID={slide_slide_obj.id} no tiene archivo PDF")
+            return self._return_error_response("El certificado no tiene archivo PDF asociado")
+
+        # Generar respuesta exitosa
         headers=[('Content-Type', 'application/pdf'),('Content-Disposition', 'filename='+filename)]
         response = werkzeug.wrappers.Response(headers=headers)
-
-        r = slide_slide_obj.x_certificado_publicado_file
-        if r:
-            response.data = base64.b64decode(r)
-        else:
-            response.data = ''
+        response.data = base64.b64decode(r)
         response.mimetype = 'application/pdf'
+        
+        _logger.info(f"download_certificado_ultimo_pdf - PDF generado exitosamente: {filename}")
+        return response
+    
+    def _return_error_response(self, error_message):
+        """Retorna una respuesta de error HTML en lugar de PDF vacío"""
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Error</title>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 50px; text-align: center; }}
+                .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 5px; }}
+            </style>
+        </head>
+        <body>
+            <div class="error">
+                <h2>Error al cargar el certificado</h2>
+                <p>{error_message}</p>
+                <button onclick="history.back()">Volver</button>
+            </div>
+        </body>
+        </html>
+        """
+        response = werkzeug.wrappers.Response(html_content)
+        response.mimetype = 'text/html'
+        response.status_code = 400
         return response
 
     @http.route(['/my/<string:ruta_url>','/my/<string:ruta_url>/page/<int:page>'], type='http', auth="user", methods=['GET'], website=True)
