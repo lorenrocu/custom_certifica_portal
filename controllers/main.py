@@ -205,16 +205,28 @@ class ProductPlannerPortal(CustomerPortal):
                  '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/combined'], type='http', auth="user",website=True)
     def print_certificate_with_qr_combined(self,**kwargs):
         """
-        Genera un PDF que combina la información del certificado con el código QR integrado
+        Descarga el certificado completo original y le agrega un QR en una página adicional
         """
         strurlruta = kwargs.get('ruta_url')
         strurl = kwargs.get('ruta_urlqr')
         idcertificado = kwargs.get('idcertificado')
         xid = kwargs.get('id')
         xuserid = kwargs.get('userid')
-        report_name = 'custom_certifica_portal.print_certificate_qr_combined'
 
         _logger.info("print_certificate_with_qr_combined - Generando certificado completo con QR para tipo: '%s'" % strurlruta)
+
+        # Validación de parámetros obligatorios
+        if not strurlruta:
+            _logger.error("print_certificate_with_qr_combined - Parámetro ruta_url faltante")
+            return self._return_error_response("Parámetro ruta_url requerido")
+            
+        if not xid or xid == 'False':
+            _logger.error("print_certificate_with_qr_combined - Parámetro id inválido: %s" % xid)
+            return self._return_error_response("ID de registro inválido")
+            
+        if not xuserid or xuserid == 'False':
+            _logger.error("print_certificate_with_qr_combined - Parámetro userid inválido: %s" % xuserid)
+            return self._return_error_response("ID de usuario inválido")
 
         # APLICAR BÚSQUEDA DINÁMICA PARA QR ANTIGUOS Y NUEVOS
         tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
@@ -226,9 +238,54 @@ class ProductPlannerPortal(CustomerPortal):
         if strurlruta != strurlruta_final:
             _logger.info("print_certificate_with_qr_combined - Tipo mapeado: '%s' -> '%s'" % (strurlruta, strurlruta_final))
 
-        urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
+        # Conversión segura para evitar excepciones cuando los parámetros no son numéricos
+        registro_id = int(xid) if xid and str(xid).isdigit() else False
+        cliente_id = int(xuserid) if xuserid and str(xuserid).isdigit() else False
         
-        # Detectar si estamos en entorno de desarrollo
+        _logger.info("print_certificate_with_qr_combined - IDs convertidos: registro_id=%s, cliente_id=%s, tipo_doc_id=%s" % (registro_id, cliente_id, tiposdocumentos.id))
+        
+        # Búsqueda del certificado usando la misma lógica que download_certificado_ultimo_pdf
+        if strurlruta_final=='personas':
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                     ('personas_id', '=', registro_id),
+                     ('cliente_id', '=', cliente_id)]
+        else:
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                     ('xmaquinaria', '=', registro_id),
+                     ('cliente_id', '=', cliente_id)]
+        
+        _logger.info("print_certificate_with_qr_combined - Dominio de búsqueda: %s" % domain)
+        
+        slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc',limit=1)
+        
+        # Fallback: intentar con el parent_id del partner si no se encuentra
+        if not slide_slide_obj and cliente_id:
+            try:
+                partner = request.env['res.partner'].sudo().browse(cliente_id)
+                if partner and partner.parent_id:
+                    domain_parent = [(d[0], d[1], d[2]) for d in domain]
+                    for i, d in enumerate(domain_parent):
+                        if d[0] == 'cliente_id':
+                            domain_parent[i] = ('cliente_id', '=', partner.parent_id.id)
+                    _logger.warning("print_certificate_with_qr_combined - Fallback usando parent_id=%s con dominio: %s" % (partner.parent_id.id, domain_parent))
+                    slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain_parent, order='fecha_vigencia desc',limit=1)
+            except Exception as e:
+                _logger.error("print_certificate_with_qr_combined - Error en fallback parent_id: %s" % str(e))
+        
+        if not slide_slide_obj:
+            _logger.error("print_certificate_with_qr_combined - No se encontró certificado con dominio: %s" % domain)
+            return self._return_error_response("Certificado no encontrado")
+        
+        _logger.info("print_certificate_with_qr_combined - Certificado encontrado: ID=%s" % slide_slide_obj.id)
+
+        # Verificar si existe el archivo PDF original
+        original_pdf = slide_slide_obj.x_certificado_publicado_file
+        if not original_pdf:
+            _logger.error("print_certificate_with_qr_combined - Certificado ID=%s no tiene archivo PDF" % slide_slide_obj.id)
+            return self._return_error_response("El certificado no tiene archivo PDF asociado")
+
+        # Generar URL para el QR
+        urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
         base_url = str(urlbase.value)
         if 'tienda-desa.certificalatam.com' in request.httprequest.host:
             base_url = 'https://tienda-desa.certificalatam.com'
@@ -237,7 +294,7 @@ class ProductPlannerPortal(CustomerPortal):
             
         # Usar el tipo final (mapeado si es necesario) para generar la URL
         if strurlruta_final=='personas':
-            xurldownload = base_url+'/web/certificado_current/download_pdf/'+str(idcertificado)
+            xurldownload = base_url+'/web/certificado_current/download_pdf/'+str(idcertificado if idcertificado else slide_slide_obj.id)
         else:
             xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta_final)+'/'+str(xid)+'/'+str(xuserid)
         
@@ -257,44 +314,74 @@ class ProductPlannerPortal(CustomerPortal):
             qr_width = 370
             qr_height = 370
 
-        docargs = {
-            'xurldownload': xurldownload,
-            'qr_width': qr_width,
-            'qr_height': qr_height,
-        }
-
-        response = werkzeug.wrappers.Response()
-        # Manejo seguro de conversiones a entero para evitar ValueError cuando el parámetro es 'False' u otro valor no numérico
-        xid_int = int(xid) if xid and str(xid).isdigit() else False
-        
-        if strurlruta_final=='personas':
-            certificado = request.env['informes.encuestas.merge'].sudo().search(
-                [('personas_id', '=', xid_int)], order='fecha_vigencia desc',limit=1)
-        else:
-            certificado = request.env['informes.encuestas.merge'].sudo().search(
-                [('xmaquinaria', '=', xid_int)], order='fecha_vigencia desc',limit=1)
-
-        if certificado:
+        try:
+            # Generar el QR como PDF separado
+            docargs = {
+                'xurldownload': xurldownload,
+                'qr_width': qr_width,
+                'qr_height': qr_height,
+            }
+            
+            qr_pdf_data = request.env.ref('custom_certifica_portal.print_qr').sudo().render_qweb_pdf([slide_slide_obj.id], docargs)[0]
+            
+            # Combinar PDFs: certificado original + página con QR
             try:
-                # Generar el PDF combinado usando el nuevo template
-                pdf_data = request.env.ref(report_name).sudo().render_qweb_pdf([certificado.id], docargs)[0]
-                response.data = pdf_data
+                from PyPDF2 import PdfReader, PdfWriter
+                import io
                 
-                # Configurar headers para descarga
-                filename = 'Certificado-QR-%s.pdf' % (certificado.codigocliente or 'Sin-Codigo')
-                response.headers['Content-Type'] = 'application/pdf'
-                response.headers['Content-Disposition'] = 'attachment; filename="%s"' % filename
+                # Leer PDF original
+                original_pdf_bytes = base64.b64decode(original_pdf)
+                original_reader = PdfReader(io.BytesIO(original_pdf_bytes))
                 
-                _logger.info("print_certificate_with_qr_combined - PDF generado exitosamente: %s" % filename)
+                # Leer PDF del QR
+                qr_reader = PdfReader(io.BytesIO(qr_pdf_data))
+                
+                # Crear PDF combinado
+                writer = PdfWriter()
+                
+                # Agregar todas las páginas del certificado original
+                for page in original_reader.pages:
+                    writer.add_page(page)
+                
+                # Agregar página del QR
+                for page in qr_reader.pages:
+                    writer.add_page(page)
+                
+                # Generar PDF final
+                output_buffer = io.BytesIO()
+                writer.write(output_buffer)
+                combined_pdf_data = output_buffer.getvalue()
+                output_buffer.close()
+                
+            except ImportError:
+                _logger.warning("print_certificate_with_qr_combined - PyPDF2 no disponible, devolviendo solo certificado original")
+                combined_pdf_data = original_pdf_bytes
             except Exception as e:
-                _logger.error("print_certificate_with_qr_combined - Error generando PDF: %s" % str(e))
-                return self._return_error_response("Error generando el certificado con QR: %s" % str(e))
-        else:
-            _logger.error("print_certificate_with_qr_combined - Certificado no encontrado")
-            return self._return_error_response("Certificado no encontrado")
-        
-        response.mimetype = 'application/pdf'
-        return response
+                _logger.error("print_certificate_with_qr_combined - Error combinando PDFs: %s" % str(e))
+                combined_pdf_data = original_pdf_bytes
+
+            # Determinar nombre del archivo
+            if slide_slide_obj.file_name_certificado:
+                filename = slide_slide_obj.file_name_certificado.replace('.pdf', '-QR.pdf')
+            else:
+                if slide_slide_obj.codigocliente:
+                    filename = slide_slide_obj.codigocliente+'-QR.pdf'
+                else:
+                    filename = 'CERTIFICADO_QR_SIN_CODIGO.pdf'
+
+            # Generar respuesta
+            response = werkzeug.wrappers.Response()
+            response.data = combined_pdf_data
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = 'attachment; filename="%s"' % filename
+            response.mimetype = 'application/pdf'
+            
+            _logger.info("print_certificate_with_qr_combined - PDF combinado generado exitosamente: %s" % filename)
+            return response
+            
+        except Exception as e:
+            _logger.error("print_certificate_with_qr_combined - Error generando PDF combinado: %s" % str(e))
+            return self._return_error_response("Error generando el certificado con QR: %s" % str(e))
 
     @http.route('/web/equipos/download_pdf/<id>', type='http', auth="public",website=True)
     def download_equipos_patrones_pdf(self,id,**kwargs):
