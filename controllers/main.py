@@ -41,9 +41,10 @@ class ProductPlannerPortal(CustomerPortal):
             _logger.info("_buscar_tipo_documento_dinamico - Tipos disponibles: %s" % tipos_disponibles)
             
             # Mapeo simple y directo para casos conocidos
+            # Ajustado: 'elementosdeizaje' debe redirigir a 'equiposdemedicion'
+            # porque es el tipo activo que actualmente funciona en producción.
             mapeo_directo = {
-                'elementosdeizaje': 'mediciondeequipo',
-                'equiposdemedicion': 'mediciondeequipo',
+                'elementosdeizaje': 'equiposdemedicion',
             }
             
             # Verificar mapeo directo primero
@@ -54,6 +55,13 @@ class ProductPlannerPortal(CustomerPortal):
                 if tiposdocumentos:
                     _logger.info("_buscar_tipo_documento_dinamico - Mapeo directo exitoso")
                     return tiposdocumentos, nuevo_tipo
+                else:
+                    # Fallback adicional: intentar 'mediciondeequipo' si 'equiposdemedicion' no está activo
+                    _logger.warning("_buscar_tipo_documento_dinamico - Mapeo directo falló para '%s'. Intentando fallback 'mediciondeequipo'" % nuevo_tipo)
+                    tiposdocumentos = request.env['informes.encuestas.tipo.encuesta.portal'].sudo().search([('active', '=', True),('code', '=', 'mediciondeequipo')],limit=1)
+                    if tiposdocumentos:
+                        _logger.info("_buscar_tipo_documento_dinamico - Fallback exitoso: 'elementosdeizaje' -> 'mediciondeequipo'")
+                        return tiposdocumentos, 'mediciondeequipo'
             
             # Función para calcular similitud entre strings
             def calcular_similitud(str1, str2):
@@ -295,6 +303,20 @@ class ProductPlannerPortal(CustomerPortal):
         _logger.info("download_certificado_ultimo_pdf - Dominio de búsqueda: %s" % domain)
         
         slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc',limit=1)
+        
+        # Fallback: intentar con el parent_id del partner si no se encuentra
+        if not slide_slide_obj and cliente_id:
+            try:
+                partner = request.env['res.partner'].sudo().browse(cliente_id)
+                if partner and partner.parent_id:
+                    domain_parent = [(d[0], d[1], d[2]) for d in domain]
+                    for i, d in enumerate(domain_parent):
+                        if d[0] == 'cliente_id':
+                            domain_parent[i] = ('cliente_id', '=', partner.parent_id.id)
+                    _logger.warning("download_certificado_ultimo_pdf - Fallback usando parent_id=%s con dominio: %s" % (partner.parent_id.id, domain_parent))
+                    slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain_parent, order='fecha_vigencia desc',limit=1)
+            except Exception as e:
+                _logger.error("download_certificado_ultimo_pdf - Error en fallback parent_id: %s" % str(e))
         
         if not slide_slide_obj:
             _logger.error("download_certificado_ultimo_pdf - No se encontró certificado con dominio: %s" % domain)
