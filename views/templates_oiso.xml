@@ -1,0 +1,261 @@
+<odoo>
+
+
+  <template id="page_oiso" name="Documentos">
+    <t t-call="portal.portal_layout">
+      <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+      <t t-call="portal.portal_searchbar">
+        <t t-set="title">Equipos</t>
+      </t>
+      <t t-if="not listmaquinarias_ids">
+        <p>No existen equipos/personas con certificados.</p>
+      </t>
+
+
+    <t t-if="listmaquinarias_ids" t-call="portal.portal_table">
+        <thead>
+          <tr class="active">
+            <th>RUC Empresa</th>
+            <th>Empresa</th>
+            <th>Sede</th>
+            <th>Tipo</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Serie</th>
+            <th>Fecha</th>
+
+          </tr>
+        </thead>
+        <tbody>
+          <t t-foreach="listmaquinarias_ids" t-as="doc">
+            <tr>
+              <td>
+
+                <a t-att-href="strurl+str('/')+str(doc.id)" style="color:blue;" t-att-title="partner_id.vat">
+                  <t t-if="partner_id.vat != '/'" t-esc="partner_id.vat" />
+                  <em t-else="">EQUIPOS</em>
+                </a>
+              </td>
+              <td><span t-field="partner_id.name"/></td>
+              <td><span t-esc="sedecliente"/></td>
+              <td><span t-field="doc.equipotipo_id.name"/></td>
+              <td><span t-field="doc.marca_id.name"/></td>
+              <td><span t-field="doc.modelo"/></td>
+              <td><span t-field="doc.name"/></td>
+              <td></td>
+            </tr>
+          </t>
+        </tbody>
+      </t>
+
+    </t>
+  </template>
+
+  <template id="portal_certificados_page_oiso" name="Portal de certificados" inherit_id="portal.portal_sidebar" primary="True">
+    <xpath expr="//div[hasclass('o_portal_sidebar')]" position="inside">
+      <div class="row mt16" style="padding-left:13px !important;">
+        <!-- Sidebar -->
+        <t t-call="portal.portal_record_sidebar">
+
+          <t t-set="title">
+            <h3 class="mb-0">INFORMACIÓN RESUMEN</h3>
+            <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', urldownload, 150, 150)"/>
+            <h3 class="mb-0">
+              <b t-field="maq.name"/>
+            </h3>
+            <p>Escaneame para ver el último certificado.</p>
+          </t>
+
+          <t t-set="entries">
+            <div >
+              <table style="margin: auto;">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Agente</td>
+                    <td><span t-field="xidultimocert.xtipoencuesta.name"/></td>
+                  </tr>
+                  <tr>
+                    <td>RUC Empresa</td>
+                    <td><span t-field="xidultimocert.cliente_id.vat"/></td>
+                  </tr>
+
+                  <tr>
+                    <td>Vigente hasta</td>
+                    <td>
+                      <span t-esc="ultimocert.get('fecha_vigencia')"/>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Último Documento</td>
+                    <td>
+                      <span t-esc="ultimocert.get('ultima_certificacion')"/>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Fecha Certificación</td>
+                    <td>
+                      <span t-esc="ultimocert.get('fecha_certificacion')"/>
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
+            </div>
+            <ul class="list-group list-group-flush flex-wrap flex-row flex-lg-column">
+
+              <li class="list-group-item flex-grow-1">
+                <div class="o_download_pdf btn-toolbar flex-sm-nowrap">
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="urldownload" title="Descargar" target="_blank"><i class="fa fa-download"/> Descargar</a>
+                  </div>
+
+                </div>
+
+                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto;">
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 1.5 cm</a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr35')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 3.5 cm</a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr50')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 5.0 cm</a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr95')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 9.5 cm</a>
+                  </div>
+
+                </div>
+
+              </li>
+
+            </ul>
+          </t>
+        </t>
+
+        <!-- Page Content -->
+        <div id="documentos_content" class="col-12 col-lg">
+
+          <div class="o_portal_html_view shadow p-3">
+            <span style="font-weight: bold;">Certificaciones</span>
+            <table style="margin: auto; width:100%;text-align:center;">
+
+              <thead>
+                <tr class="active">
+                  <th>Documentos</th>
+                  <th>Descarga</th>
+                  <th>Patrones</th>
+                  <th>Realizado</th>
+                  <!--
+                  <th style="width:20%;">Próxima calibración</th>
+                  -->
+                  <th>Programado</th>
+                  <th>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <t t-foreach="listcertificados_ids" t-as="certificado">
+                  <tr >
+                    <td style="text-align:left;"><span t-field="certificado.codigocliente"/>
+                    </td>
+                    <td>
+                      <a class="btn btn-secondary btn-block o_download_btn" t-att-href="certificado.xurldownload" style="color:white;font-size:9px;" target="_blank" t-att-title="certificado.codigocliente">
+                        <i class="fa fa-download"/></a>
+                    </td>
+                    <td>
+                      <t t-foreach="certificado.equipos_ids" t-as="equipo">
+                        <t t-if="equipo.certificado_calibracion">
+
+
+                          <a class="btn btn-secondary btn-block o_download_btn" t-att-href="equipo.xurldownload" t-att-alt="equipo.name" style="color:white;font-size:9px" target="_blank" t-att-title="equipo.name">
+                            <i class="fa fa-download"/>
+                          </a>
+
+
+                        </t>
+                      </t>
+                    </td>
+                    <td><span t-field="certificado.fecha_monitoreo"/></td>
+                    <!--
+                    <td><span t-field="certificado.fecha_monitoreo"/></td>
+                    -->
+                    <td><span t-field="certificado.fecha_vigencia"/></td>
+                    <td><span t-field="certificado.description"/></td>
+
+                  </tr>
+                </t>
+
+              </tbody>
+            </table>
+
+
+          </div>
+
+          <!--
+          <div class="o_portal_html_view shadow p-3">
+
+            <table style="margin: auto; width:50%;text-align:center;">
+              <tbody>
+                <tr>
+                  <td style="text-align:left;width: 50%;">RUC</td>
+                  <td><span t-field="partner_id.vat"/></td>
+                </tr>
+                <tr>
+                  <td style="text-align:left;">Empresa</td>
+                  <td><span t-field="partner_id.name"/></td>
+                </tr>
+                <tr>
+                  <td style="text-align:left;">Nombre</td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td style="text-align:left;">Apellidos</td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td style="text-align:left;">Email</td>
+                  <td><span t-field="partner_id.email"/></td>
+                </tr>
+                <tr>
+                  <td style="text-align:left;">Dirección</td>
+                  <td><span t-field="partner_id.street"/></td>
+                </tr>
+                <tr>
+                  <td style="text-align:left;">Teléfono</td>
+                  <td><span t-field="partner_id.phone"/></td>
+                </tr>
+                <tr>
+                  <td style="text-align:left;">Sitio Web</td>
+                  <td><span t-field="partner_id.website"/></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          -->
+
+          <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 50%;margin: auto;">
+            <div class="btn-group  flex-grow-1 mr-1 mb-1">
+              <a class="btn btn-secondary btn-block o_download_btn" t-att-href="strurl" title="Mis equipos" ><i class="fa fa-back"/> Regresar a la lista de equipos</a>
+            </div>
+
+          </div>
+
+
+
+
+
+        </div>
+      </div>
+
+    </xpath>
+  </template>
+
+</odoo>

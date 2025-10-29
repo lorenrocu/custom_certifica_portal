@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <template id="ow_portal_certifica" inherit_id="web.assets_frontend">
+        <xpath expr="." position="inside">
+
+            <link rel="stylesheet" href="/custom_certifica_portal/static/src/scss/style.scss" />
+        </xpath>
+    </template>
+
+</odoo>

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.swp
+*.log
+*.pot
+*.mo
+.idea/
+.vscode/
+*.egg-info/
+*.zip
+*.tar.gz
+*.pdf
+*.xlsx
+.DS_Store

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="print2_qr15">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <div class="page" style="position:absolute; top:-40; left:0; ">
+                <div style="display: inherit;margin:auto;text-align: center;">
+                    <img t-if="doc.company_id.logo" t-att-src="'data:image/png;base64,%s' %  to_text(doc.company_id.logo) " style="max-height:30px;"/>
+                </div>
+                <div style="display: inherit;margin:auto;text-align: center;padding-top:5px;">
+                    <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', xurldownload, h, w)"/>
+                </div>
+            </div>
+        </template>
+
+        <template id="report_qrcode15">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.print2_qr15" />
+                </t>
+            </t>
+        </template>
+
+        <report
+                id="print_qr"
+                menu="False"
+                string="QRCode15cm"
+                model="informes.encuestas.merge"
+                report_type="qweb-pdf"
+                file="custom_certifica_portal.report_qrcode15"
+                name="custom_certifica_portal.report_qrcode15"
+                print_report_name="'qrcode15 - %s' % (object.name)" />
+
+    </data>
+
+
+</odoo>
