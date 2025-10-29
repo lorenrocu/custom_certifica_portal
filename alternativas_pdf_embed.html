@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alternativas para Embeber PDF</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>Alternativas para mostrar PDF embebido (sin iframe)</h1>
+    
+    <h2>1. Usando &lt;object&gt; (YA IMPLEMENTADO)</h2>
+    <p><strong>Ventajas:</strong> Mejor compatibilidad, fallback automático, más estándar</p>
+    <pre><code>&lt;object t-att-data="urldownload" type="application/pdf" width="100%" height="600"&gt;
+    &lt;div&gt;Fallback si no se puede mostrar el PDF&lt;/div&gt;
+&lt;/object&gt;</code></pre>
+    
+    <h2>2. Usando &lt;embed&gt; (Alternativa simple)</h2>
+    <p><strong>Ventajas:</strong> Muy simple, compatible con la mayoría de navegadores</p>
+    <pre><code>&lt;embed t-att-src="urldownload" type="application/pdf" width="100%" height="600" /&gt;</code></pre>
+    
+    <h2>3. Visor PDF.js personalizado</h2>
+    <p><strong>Ventajas:</strong> Control total, funciona en todos los navegadores, no depende del visor del navegador</p>
+    <pre><code>&lt;iframe t-att-src="'/web/static/lib/pdfjs/web/viewer.html?file=' + urldownload" width="100%" height="600"&gt;&lt;/iframe&gt;</code></pre>
+    
+    <h2>4. Botón de descarga con vista previa opcional</h2>
+    <p><strong>Ventajas:</strong> Siempre funciona, no depende de capacidades del navegador</p>
+    <pre><code>&lt;div class="text-center"&gt;
+    &lt;a t-att-href="urldownload" class="btn btn-primary btn-lg" target="_blank"&gt;
+        &lt;i class="fa fa-file-pdf-o"&gt;&lt;/i&gt; Ver Certificado
+    &lt;/a&gt;
+&lt;/div&gt;</code></pre>
+    
+    <h2>5. Combinación: Embed + Fallback</h2>
+    <p><strong>Ventajas:</strong> Intenta mostrar embebido, si falla muestra botón de descarga</p>
+    <pre><code>&lt;div id="pdf-container"&gt;
+    &lt;embed t-att-src="urldownload" type="application/pdf" width="100%" height="600" 
+           onerror="document.getElementById('pdf-fallback').style.display='block'; this.style.display='none';" /&gt;
+    &lt;div id="pdf-fallback" style="display:none; text-align:center; padding:20px;"&gt;
+        &lt;p&gt;No se puede mostrar el PDF embebido&lt;/p&gt;
+        &lt;a t-att-href="urldownload" class="btn btn-primary"&gt;Abrir PDF&lt;/a&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    
+    <h2>Recomendación</h2>
+    <p>Ya implementé la opción 1 (&lt;object&gt;) que es la más robusta. Si quieres probar otra, puedo cambiarla fácilmente.</p>
+    
+    <h2>Ventajas del &lt;object&gt; vs &lt;iframe&gt;</h2>
+    <ul>
+        <li>✅ Mejor manejo de errores</li>
+        <li>✅ Fallback automático si el PDF no se puede mostrar</li>
+        <li>✅ Más estándar HTML5</li>
+        <li>✅ No depende de políticas de iframe (X-Frame-Options)</li>
+        <li>✅ Mejor accesibilidad</li>
+    </ul>
+</body>
+</html>
