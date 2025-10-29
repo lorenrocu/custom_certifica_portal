@@ -20,6 +20,7 @@
         'report/qrcode_backend35.xml',
         'report/qrcode_backend50.xml',
         'report/qrcode_backend95.xml',
+        'report/qrcode_combined.xml',
         'views/templates.xml',
          'views/templates_personas.xml',
          'views/templates_oiso.xml',

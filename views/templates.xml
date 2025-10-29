@@ -173,6 +173,36 @@
 
                 </div>
 
+                <!-- Nueva sección: Certificado Completo con QR -->
+                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 20px; border-top: 2px solid #2E86AB; padding-top: 15px;">
+                  <div style="width: 100%; text-align: center; margin-bottom: 10px;">
+                    <h5 style="color: #2E86AB; margin: 0; font-weight: bold;">
+                      <i class="fa fa-file-pdf-o"/> Certificado Completo con QR
+                    </h5>
+                    <small style="color: #666;">Descarga el certificado completo con código QR integrado</small>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-primary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/combined')" title="Certificado Completo con QR 1.5cm" target="_blank">
+                      <i class="fa fa-download"/> QR 1.5 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-primary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/combined')" title="Certificado Completo con QR 3.5cm" target="_blank">
+                      <i class="fa fa-download"/> QR 3.5 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-primary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/combined')" title="Certificado Completo con QR 5.0cm" target="_blank">
+                      <i class="fa fa-download"/> QR 5.0 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-primary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr95/combined')" title="Certificado Completo con QR 9.5cm" target="_blank">
+                      <i class="fa fa-download"/> QR 9.5 cm
+                    </a>
+                  </div>
+                </div>
+
 
 
               </li>

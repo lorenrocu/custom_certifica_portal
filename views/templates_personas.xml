@@ -148,6 +148,7 @@
                   <th>Descarga</th>
                   <th>Código QR</th>
                   <th>Imprimir</th>
+                  <th style="background-color: #2E86AB; color: white;">Certificado + QR</th>
                   <th style="width: 100px;">Certificado</th>
 
                   <th style="width: 100px;">Próxima Certificación</th>
@@ -169,6 +170,16 @@
                     </td>
                     <td>
                       <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)" title="Imprimir" target="_blank" style="margin-top:2px;"><i class="fa fa-print"/></a>
+                    </td>
+                    <td style="background-color: #f8f9fa;">
+                      <div class="btn-group-vertical" style="width: 100%;">
+                        <a class="btn btn-primary btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/combined')" title="Certificado Completo con QR 1.5cm" target="_blank" style="margin-bottom: 2px; font-size: 10px;">
+                          <i class="fa fa-download"/> 1.5cm
+                        </a>
+                        <a class="btn btn-primary btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/combined')" title="Certificado Completo con QR 5.0cm" target="_blank" style="font-size: 10px;">
+                          <i class="fa fa-download"/> 5.0cm
+                        </a>
+                      </div>
                     </td>
                     <td><span t-field="certificado.fecha_monitoreo"/></td>
 

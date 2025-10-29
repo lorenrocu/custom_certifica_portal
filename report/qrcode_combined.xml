@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Template para certificado completo con QR integrado -->
+        <template id="print_certificate_with_qr">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            
+            <!-- Página 1: Información del certificado con QR -->
+            <div class="page">
+                <!-- Header con logo de la empresa -->
+                <div class="header" style="text-align: center; margin-bottom: 30px;">
+                    <img t-if="doc.company_id.logo" 
+                         t-att-src="'data:image/png;base64,%s' % to_text(doc.company_id.logo)" 
+                         style="max-height: 80px; margin-bottom: 20px;"/>
+                    <h2 style="color: #2E86AB; margin: 0;">CERTIFICADO DE CALIBRACIÓN</h2>
+                </div>
+
+                <!-- Información principal del certificado -->
+                <div class="row" style="margin-bottom: 30px;">
+                    <div class="col-8">
+                        <table class="table table-borderless" style="width: 100%;">
+                            <tr>
+                                <td style="width: 30%; font-weight: bold;">Código del Certificado:</td>
+                                <td><span t-field="doc.codigocliente"/></td>
+                            </tr>
+                            <tr t-if="doc.xmaquinaria">
+                                <td style="font-weight: bold;">Equipo:</td>
+                                <td><span t-field="doc.xmaquinaria.name"/></td>
+                            </tr>
+                            <tr t-if="doc.xmaquinaria">
+                                <td style="font-weight: bold;">Tipo:</td>
+                                <td><span t-field="doc.xmaquinaria.equipotipo_id.name"/></td>
+                            </tr>
+                            <tr t-if="doc.xmaquinaria">
+                                <td style="font-weight: bold;">Marca:</td>
+                                <td><span t-field="doc.xmaquinaria.marca_id.name"/></td>
+                            </tr>
+                            <tr t-if="doc.xmaquinaria">
+                                <td style="font-weight: bold;">Modelo:</td>
+                                <td><span t-field="doc.xmaquinaria.modelo"/></td>
+                            </tr>
+                            <tr t-if="doc.personas_id">
+                                <td style="font-weight: bold;">Persona:</td>
+                                <td><span t-field="doc.personas_id.name"/></td>
+                            </tr>
+                            <tr t-if="doc.personas_id">
+                                <td style="font-weight: bold;">DNI:</td>
+                                <td><span t-field="doc.personas_id.vat"/></td>
+                            </tr>
+                            <tr t-if="doc.x_competencias">
+                                <td style="font-weight: bold;">Competencia:</td>
+                                <td><span t-field="doc.x_competencias"/></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Cliente:</td>
+                                <td><span t-field="doc.cliente_id.name"/></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">RUC:</td>
+                                <td><span t-field="doc.cliente_id.vat"/></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Fecha de Certificación:</td>
+                                <td><span t-field="doc.fecha_monitoreo"/></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Vigente hasta:</td>
+                                <td><span t-field="doc.fecha_vigencia"/></td>
+                            </tr>
+                            <tr t-if="doc.description">
+                                <td style="font-weight: bold;">Observaciones:</td>
+                                <td><span t-field="doc.description"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- QR Code en la esquina superior derecha -->
+                    <div class="col-4" style="text-align: center;">
+                        <div style="border: 2px solid #2E86AB; padding: 15px; border-radius: 10px;">
+                            <p style="margin: 0 0 10px 0; font-weight: bold; color: #2E86AB;">Código QR</p>
+                            <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', xurldownload, qr_width, qr_height)"/>
+                            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+                                Escanea para verificar<br/>la autenticidad
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div style="margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
+                    <h4 style="color: #2E86AB; margin-bottom: 15px;">Información de Verificación</h4>
+                    <p style="margin: 5px 0;">
+                        <strong>URL de Verificación:</strong> 
+                        <span t-esc="xurldownload" style="font-family: monospace; font-size: 11px; word-break: break-all;"/>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #666;">
+                        Este certificado puede ser verificado escaneando el código QR o visitando la URL mostrada arriba.
+                    </p>
+                </div>
+
+                <!-- Footer -->
+                <div class="footer" style="position: absolute; bottom: 30px; width: 100%; text-align: center; font-size: 11px; color: #666;">
+                    <hr style="margin-bottom: 10px;"/>
+                    <p style="margin: 0;">
+                        Documento generado automáticamente el <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y a las %H:%M')"/>
+                    </p>
+                    <p style="margin: 0;">
+                        <span t-field="doc.company_id.name"/> - <span t-field="doc.company_id.website"/>
+                    </p>
+                </div>
+            </div>
+        </template>
+
+        <!-- Template principal que llama al template de certificado con QR -->
+        <template id="report_certificate_with_qr">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.print_certificate_with_qr" />
+                </t>
+            </t>
+        </template>
+
+        <!-- Definición del reporte -->
+        <report
+                id="print_certificate_qr_combined"
+                menu="False"
+                string="Certificado con QR"
+                model="informes.encuestas.merge"
+                report_type="qweb-pdf"
+                file="custom_certifica_portal.report_certificate_with_qr"
+                name="custom_certifica_portal.report_certificate_with_qr"
+                print_report_name="'Certificado-QR - %s' % (object.codigocliente or 'Sin-Codigo')" />
+
+    </data>
+</odoo>

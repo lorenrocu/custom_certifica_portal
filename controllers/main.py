@@ -201,6 +201,101 @@ class ProductPlannerPortal(CustomerPortal):
         response.mimetype = 'application/pdf'
         return response
 
+    @http.route(['/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/combined',
+                 '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/combined'], type='http', auth="user",website=True)
+    def print_certificate_with_qr_combined(self,**kwargs):
+        """
+        Genera un PDF que combina la información del certificado con el código QR integrado
+        """
+        strurlruta = kwargs.get('ruta_url')
+        strurl = kwargs.get('ruta_urlqr')
+        idcertificado = kwargs.get('idcertificado')
+        xid = kwargs.get('id')
+        xuserid = kwargs.get('userid')
+        report_name = 'custom_certifica_portal.print_certificate_qr_combined'
+
+        _logger.info("print_certificate_with_qr_combined - Generando certificado completo con QR para tipo: '%s'" % strurlruta)
+
+        # APLICAR BÚSQUEDA DINÁMICA PARA QR ANTIGUOS Y NUEVOS
+        tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
+        
+        if not tiposdocumentos:
+            _logger.error("print_certificate_with_qr_combined - Tipo de documento no encontrado para: '%s'" % strurlruta)
+            return self._return_error_response("No se puede generar certificado: Tipo de documento '%s' no encontrado" % strurlruta)
+        
+        if strurlruta != strurlruta_final:
+            _logger.info("print_certificate_with_qr_combined - Tipo mapeado: '%s' -> '%s'" % (strurlruta, strurlruta_final))
+
+        urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
+        
+        # Detectar si estamos en entorno de desarrollo
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+            
+        # Usar el tipo final (mapeado si es necesario) para generar la URL
+        if strurlruta_final=='personas':
+            xurldownload = base_url+'/web/certificado_current/download_pdf/'+str(idcertificado)
+        else:
+            xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta_final)+'/'+str(xid)+'/'+str(xuserid)
+        
+        # Configurar tamaño del QR según el parámetro
+        qr_width = 150
+        qr_height = 150
+        if strurl=='print_qr15':
+            qr_width = 63
+            qr_height = 63
+        elif strurl=='print_qr35':
+            qr_width = 147
+            qr_height = 147
+        elif strurl=='print_qr50':
+            qr_width = 210
+            qr_height = 210
+        elif strurl=='print_qr95':
+            qr_width = 370
+            qr_height = 370
+
+        docargs = {
+            'xurldownload': xurldownload,
+            'qr_width': qr_width,
+            'qr_height': qr_height,
+        }
+
+        response = werkzeug.wrappers.Response()
+        # Manejo seguro de conversiones a entero para evitar ValueError cuando el parámetro es 'False' u otro valor no numérico
+        xid_int = int(xid) if xid and str(xid).isdigit() else False
+        
+        if strurlruta_final=='personas':
+            certificado = request.env['informes.encuestas.merge'].sudo().search(
+                [('personas_id', '=', xid_int)], order='fecha_vigencia desc',limit=1)
+        else:
+            certificado = request.env['informes.encuestas.merge'].sudo().search(
+                [('xmaquinaria', '=', xid_int)], order='fecha_vigencia desc',limit=1)
+
+        if certificado:
+            try:
+                # Generar el PDF combinado usando el nuevo template
+                pdf_data = request.env.ref(report_name).sudo().render_qweb_pdf([certificado.id], docargs)[0]
+                response.data = pdf_data
+                
+                # Configurar headers para descarga
+                filename = 'Certificado-QR-%s.pdf' % (certificado.codigocliente or 'Sin-Codigo')
+                response.headers['Content-Type'] = 'application/pdf'
+                response.headers['Content-Disposition'] = 'attachment; filename="%s"' % filename
+                
+                _logger.info("print_certificate_with_qr_combined - PDF generado exitosamente: %s" % filename)
+            except Exception as e:
+                _logger.error("print_certificate_with_qr_combined - Error generando PDF: %s" % str(e))
+                return self._return_error_response("Error generando el certificado con QR: %s" % str(e))
+        else:
+            _logger.error("print_certificate_with_qr_combined - Certificado no encontrado")
+            return self._return_error_response("Certificado no encontrado")
+        
+        response.mimetype = 'application/pdf'
+        return response
+
     @http.route('/web/equipos/download_pdf/<id>', type='http', auth="public",website=True)
     def download_equipos_patrones_pdf(self,id,**kwargs):
         equipo = request.env['informes.encuestas.equipos'].sudo().search([('id','=',id)],limit=1)
