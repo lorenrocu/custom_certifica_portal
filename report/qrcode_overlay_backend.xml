@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Acciones en backend para generar Certificado + QR con overlay -->
+
+        <!-- Overlay 1.5 cm -->
+        <record id="action_qr_overlay_backend_15" model="ir.actions.server">
+            <field name="name">Certificado + QR (Overlay) - 1.5cm</field>
+            <field name="model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_type">action</field>
+            <field name="state">code</field>
+            <field name="code"><![CDATA[
+action = {
+    'type': 'ir.actions.act_url',
+    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
+        (record.xtipodocumento.code or 'equiposdemedicion'),
+        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
+        env.user.id,
+        'print_qr15',
+    ),
+    'target': 'new',
+}
+return action
+            ]]></field>
+        </record>
+
+        <!-- Overlay 3.5 cm -->
+        <record id="action_qr_overlay_backend_35" model="ir.actions.server">
+            <field name="name">Certificado + QR (Overlay) - 3.5cm</field>
+            <field name="model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_type">action</field>
+            <field name="state">code</field>
+            <field name="code"><![CDATA[
+action = {
+    'type': 'ir.actions.act_url',
+    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
+        (record.xtipodocumento.code or 'equiposdemedicion'),
+        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
+        env.user.id,
+        'print_qr35',
+    ),
+    'target': 'new',
+}
+return action
+            ]]></field>
+        </record>
+
+        <!-- Overlay 5.0 cm -->
+        <record id="action_qr_overlay_backend_50" model="ir.actions.server">
+            <field name="name">Certificado + QR (Overlay) - 5.0cm</field>
+            <field name="model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_type">action</field>
+            <field name="state">code</field>
+            <field name="code"><![CDATA[
+action = {
+    'type': 'ir.actions.act_url',
+    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
+        (record.xtipodocumento.code or 'equiposdemedicion'),
+        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
+        env.user.id,
+        'print_qr50',
+    ),
+    'target': 'new',
+}
+return action
+            ]]></field>
+        </record>
+
+        <!-- Overlay 9.5 cm -->
+        <record id="action_qr_overlay_backend_95" model="ir.actions.server">
+            <field name="name">Certificado + QR (Overlay) - 9.5cm</field>
+            <field name="model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
+            <field name="binding_type">action</field>
+            <field name="state">code</field>
+            <field name="code"><![CDATA[
+action = {
+    'type': 'ir.actions.act_url',
+    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
+        (record.xtipodocumento.code or 'equiposdemedicion'),
+        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
+        env.user.id,
+        'print_qr95',
+    ),
+    'target': 'new',
+}
+return action
+            ]]></field>
+        </record>
+
+    </data>
+</odoo>
