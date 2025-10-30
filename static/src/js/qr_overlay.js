@@ -205,6 +205,17 @@ class QROverlayManager {
             }
             const imgBlob = await imgResp.blob();
             const imgArrayBuffer = await imgBlob.arrayBuffer();
+            // Debug opcional: ver el QR en la página y en consola
+            if (new URLSearchParams(window.location.search).get('debug') === '1') {
+                console.log('🧪 DEBUG QR: tamaño blob=', imgBlob.size, 'bytes');
+                const previewUrl = URL.createObjectURL(imgBlob);
+                const previewImg = document.createElement('img');
+                previewImg.src = previewUrl;
+                previewImg.alt = 'QR preview (debug)';
+                previewImg.style.cssText = 'position:fixed; right:10px; bottom:10px; width:150px; height:150px; border:1px solid #ccc; background:#fff; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,.2)';
+                document.body.appendChild(previewImg);
+                setTimeout(() => URL.revokeObjectURL(previewUrl), 30000);
+            }
             const qrImage = await pdfDoc.embedPng(imgArrayBuffer);
 
             // Obtener primera página

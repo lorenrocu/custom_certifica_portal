@@ -696,7 +696,7 @@ class ProductPlannerPortal(CustomerPortal):
         <div id="status" class="loading">Cargando librerías JavaScript...</div>
         <div id="progress"></div>
         
-        <script src="/custom_certifica_portal/static/src/js/qr_overlay.js"></script>
+        <script src="/custom_certifica_portal/static/src/js/qr_overlay.js?v=20251030"></script>
         <script>
             const config = {
                 pdfUrl: '%s',
