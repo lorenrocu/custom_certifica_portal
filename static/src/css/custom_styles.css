@@ -1,0 +1,11 @@
+@media print {
+  .noPrint {
+    display: none;
+  }
+}
+
+h1 {
+  color: #f6f6f6;
+}
+
+/* Estilos personalizados para el portal de certificados */
