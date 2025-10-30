@@ -168,8 +168,7 @@
                     <td>
                       <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', certificado.xurldownload, 50, 50)" style="margin-bottom:20px;"/>
                     </td>
-                    <!-- Oculto los reportes antiguos de QR para evitar error de assets -->
-                    <td t-if="False">
+                    <td>
                       <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)" title="Imprimir" target="_blank" style="margin-top:2px;"><i class="fa fa-print"/></a>
                     </td>
                     <td style="background-color: #f8f9fa;">
