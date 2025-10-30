@@ -224,37 +224,201 @@ class QROverlayManager {
     }
 
     /**
-     * Generar overlay con QR real usando Canvas API
+     * Generar overlay con QR real usando el endpoint del servidor
      */
     async generateDemoOverlay(pdfUrl, qrText, qrSize, filename) {
-        console.log('🎯 Generando QR real usando Canvas API...');
+        console.log('🎯 Generando QR real usando endpoint del servidor...');
         console.log('QR Text:', qrText);
         console.log('QR Size:', qrSize);
         
         try {
-            // Generar QR real usando Canvas
-            const qrCanvas = await this.generateQRWithCanvas(qrText);
+            // Usar el mismo endpoint que usa el servidor para generar QR
+            const qrImageUrl = await this.generateQRFromServer(qrText, qrSize);
             
-            // Simular tiempo de procesamiento para mostrar que está trabajando
+            // Simular tiempo de procesamiento
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // Crear un PDF simple con el QR real
-            const pdfContent = this.createRealQRPDF(qrText, qrSize, filename, qrCanvas);
+            // Crear un PDF simple con el QR real del servidor
+            const pdfContent = await this.createServerQRPDF(qrText, qrSize, filename, qrImageUrl);
             
             // Descargar archivo
             this.downloadFile(pdfContent, filename);
             
-            console.log('✅ QR real generado exitosamente usando Canvas');
+            console.log('✅ QR real generado exitosamente usando servidor');
             return true;
             
         } catch (error) {
-            console.error('Error generando QR con Canvas:', error);
-            // Fallback al PDF de demostración
-            const demoContent = this.createDemoPDF(qrText, qrSize, filename);
-            this.downloadFile(demoContent, filename);
-            console.log('✅ Fallback: PDF de demostración generado');
-            return true;
+            console.error('Error generando QR con servidor:', error);
+            // Fallback al Canvas API
+            try {
+                const qrCanvas = await this.generateQRWithCanvas(qrText);
+                const pdfContent = this.createRealQRPDF(qrText, qrSize, filename, qrCanvas);
+                this.downloadFile(pdfContent, filename);
+                console.log('✅ Fallback: QR generado con Canvas API');
+                return true;
+            } catch (canvasError) {
+                console.error('Error con Canvas fallback:', canvasError);
+                // Último fallback
+                const demoContent = this.createDemoPDF(qrText, qrSize, filename);
+                this.downloadFile(demoContent, filename);
+                console.log('✅ Último fallback: PDF de demostración generado');
+                return true;
+            }
         }
+    }
+
+    /**
+     * Generar QR usando el endpoint del servidor (igual que el sistema normal)
+     */
+    async generateQRFromServer(qrText, qrSize) {
+        console.log('📡 Solicitando QR al servidor...');
+        
+        // Convertir tamaño a píxeles para el endpoint
+        const sizePixels = this.convertSizeToPixels(qrSize);
+        
+        // Construir URL del endpoint igual que en main.py
+        const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${sizePixels}&height=${sizePixels}`;
+        
+        console.log('QR URL:', qrUrl);
+        
+        try {
+            const response = await fetch(qrUrl, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'image/png,image/*'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            // Convertir la respuesta a data URL para usar en PDF
+            const blob = await response.blob();
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+
+        } catch (error) {
+            console.error('❌ Error obteniendo QR del servidor:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Crear PDF con QR real del servidor
+     */
+    async createServerQRPDF(qrText, qrSize, filename, qrImageDataUrl) {
+        const qrBase64 = qrImageDataUrl.split(',')[1];
+        const sizePixels = this.convertSizeToPixels(qrSize);
+        const currentDate = new Date().toISOString();
+        
+        const content = `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Resources <<
+  /XObject <<
+    /QRImage 4 0 R
+  >>
+  /Font <<
+    /F1 5 0 R
+  >>
+>>
+/Contents 6 0 R
+>>
+endobj
+
+4 0 obj
+<<
+/Type /XObject
+/Subtype /Image
+/Width ${sizePixels}
+/Height ${sizePixels}
+/ColorSpace /DeviceRGB
+/BitsPerComponent 8
+/Filter /DCTDecode
+/Length ${qrBase64.length}
+>>
+stream
+${qrBase64}
+endstream
+endobj
+
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+
+6 0 obj
+<<
+/Length 500
+>>
+stream
+BT
+/F1 12 Tf
+50 750 Td
+(Certificado con QR Code Real del Servidor) Tj
+0 -20 Td
+(Generado: ${currentDate}) Tj
+0 -20 Td
+(URL: ${qrText}) Tj
+0 -20 Td
+(Tamaño QR: ${qrSize}) Tj
+0 -20 Td
+(Método: Endpoint /report/barcode/) Tj
+ET
+
+q
+${sizePixels} 0 0 ${sizePixels} 450 600 cm
+/QRImage Do
+Q
+endstream
+endobj
+
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000300 00000 n 
+0000000500 00000 n 
+0000000600 00000 n 
+trailer
+<<
+/Size 7
+/Root 1 0 R
+>>
+startxref
+1000
+%%EOF`;
+
+        return content;
     }
 
     /**
