@@ -2,9 +2,20 @@
 <odoo>
     
     <template id="ow_portal_certifica" inherit_id="web.assets_frontend">
-        <xpath expr="." position="inside">
-
-            <link rel="stylesheet" href="/custom_certifica_portal/static/src/css/custom_styles.css" />
+        <xpath expr="//head" position="inside">
+            <style type="text/css">
+                @media print {
+                    .noPrint {
+                        display: none;
+                    }
+                }
+                
+                h1 {
+                    color: #f6f6f6;
+                }
+                
+                /* Estilos personalizados para el portal de certificados */
+            </style>
         </xpath>
     </template>
 
