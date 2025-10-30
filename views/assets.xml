@@ -13,8 +13,22 @@
                 h1 {
                     color: #f6f6f6;
                 }
+            </style>
+        </xpath>
+    </template>
+    
+    <template id="ow_portal_certifica_report" inherit_id="web.report_assets_common">
+        <xpath expr="." position="inside">
+            <style type="text/css">
+                @media print {
+                    .noPrint {
+                        display: none;
+                    }
+                }
                 
-                /* Estilos personalizados para el portal de certificados */
+                h1 {
+                    color: #f6f6f6;
+                }
             </style>
         </xpath>
     </template>
