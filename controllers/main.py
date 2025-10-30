@@ -726,7 +726,8 @@ class ProductPlannerPortal(CustomerPortal):
                     await window.qrOverlayManager.generateQROverlay(
                         config.pdfUrl,
                         config.qrText,
-                        config.qrSize
+                        config.qrSize,
+                        config.filename
                     );
                     
                     document.getElementById('status').className = 'success';
