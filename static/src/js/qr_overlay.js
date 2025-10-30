@@ -92,11 +92,19 @@ class QROverlayManager {
      * Convertir tamaño a píxeles
      */
     convertSizeToPixels(size) {
+        // Ajuste para igualar EXACTAMENTE el tamaño del QR del flujo original (QWeb)
+        // En el backend, el endpoint /report/barcode se invoca con:
+        //   1.5 cm -> 63 px
+        //   3.5 cm -> 147 px
+        //   5.0 cm -> 210 px
+        //   9.5 cm -> 370 px
+        // (ver controllers/main.py y report/qrcode.xml)
+        // Antes estos valores estaban subdimensionados y el QR se veía más pequeño en JS.
         const sizeMap = {
-            '1.5cm': 42,
-            '3.5cm': 99,
-            '5.0cm': 142,
-            '9.5cm': 269
+            '1.5cm': 63,
+            '3.5cm': 147,
+            '5.0cm': 210,
+            '9.5cm': 370
         };
 
         if (sizeMap[size]) {
@@ -150,7 +158,7 @@ class QROverlayManager {
     /**
      * Generar overlay de QR en PDF
      */
-    async generateQROverlay(pdfUrl, qrText, qrSize, filename = 'certificado-qr.pdf') {
+    async generateQROverlay(pdfUrl, qrText, qrSize, filename = 'certificado-qr.pdf', logoSrc = null) {
         console.log('🎯 Iniciando generación de QR overlay...');
         console.log('PDF URL:', pdfUrl);
         console.log('QR Text:', qrText);
@@ -161,7 +169,7 @@ class QROverlayManager {
             // Si contamos con PDFLib podremos incrustar el PNG del QR generado por el backend
             if (this.useRealLibraries && this.PDFLib && this.PDFLib.PDFDocument) {
                 console.log('📚 Usando PDFLib para incrustar QR del backend');
-                return await this.generateRealOverlay(pdfUrl, qrText, qrSize, filename);
+                return await this.generateRealOverlay(pdfUrl, qrText, qrSize, filename, logoSrc);
             }
 
             // Fallback robusto: redirigir al endpoint del servidor que ya funciona (/overlay)
@@ -184,7 +192,7 @@ class QROverlayManager {
     /**
      * Generar overlay usando librerías reales
      */
-    async generateRealOverlay(pdfUrl, qrText, qrSize, filename) {
+    async generateRealOverlay(pdfUrl, qrText, qrSize, filename, logoSrc) {
         console.log('🔧 Generando overlay con PDFLib y QR del backend...');
 
         try {
@@ -218,15 +226,61 @@ class QROverlayManager {
             }
             const qrImage = await pdfDoc.embedPng(imgArrayBuffer);
 
+            // Si hay logo, prepararlo
+            let logoImage = null;
+            if (logoSrc) {
+                try {
+                    // Permitir tanto DataURL como URL normal
+                    let logoBytes;
+                    if (logoSrc.startsWith('data:image')) {
+                        // Convertir DataURL a ArrayBuffer
+                        const base64 = logoSrc.split(',')[1];
+                        const binaryString = atob(base64);
+                        const len = binaryString.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+                        logoBytes = bytes;
+                    } else {
+                        const logoResp = await fetch(logoSrc, { credentials: 'same-origin' });
+                        const logoBlob = await logoResp.blob();
+                        logoBytes = new Uint8Array(await logoBlob.arrayBuffer());
+                    }
+                    logoImage = await pdfDoc.embedPng(logoBytes);
+                } catch (e) {
+                    console.warn('No se pudo incrustar el logo en el PDF:', e);
+                }
+            }
+
             // Obtener primera página
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
             const { width, height } = firstPage.getSize();
 
             // Calcular posición (esquina superior derecha)
-            const qrSizePoints = this.cmToPoints(parseFloat(String(qrSize).replace('cm', '')));
+            // Usamos el mismo tamaño en PUNTOS que el flujo original (tratando px=pt),
+            // para que visualmente coincida con el PDF generado por QWeb/servidor.
+            const qrSizePoints = qrWidthPx; // mantener consistencia visual con backend
             const x = width - qrSizePoints - 20;
-            const y = height - qrSizePoints - 20;
+
+            // Si hay logo, reservar espacio por encima del QR
+            const spacing = 6; // separación entre logo y QR
+            let y;
+            let logoDrawInfo = null;
+            if (logoImage) {
+                // Altura del logo proporcional al tamaño del QR, igual que en QWeb (~30px sobre 63px -> ~0.48)
+                const logoHeight = Math.round(qrSizePoints * 0.48);
+                const scale = logoHeight / logoImage.height;
+                const logoWidth = Math.round(logoImage.width * scale);
+                // Centrar el logo respecto al QR
+                const logoX = x + Math.max(0, (qrSizePoints - logoWidth) / 2);
+                const logoY = height - logoHeight - 20; // 20pt de margen superior
+                logoDrawInfo = { x: logoX, y: logoY, width: logoWidth, height: logoHeight };
+                // Posicionar el QR justo debajo del logo con un pequeño espaciado
+                y = logoY - spacing - qrSizePoints;
+            } else {
+                // Sin logo: ubicar QR a 20pt del borde superior
+                y = height - qrSizePoints - 20;
+            }
 
             // Dibujar QR
             firstPage.drawImage(qrImage, {
@@ -235,6 +289,11 @@ class QROverlayManager {
                 width: qrSizePoints,
                 height: qrSizePoints,
             });
+
+            // Dibujar logo si está disponible
+            if (logoDrawInfo) {
+                firstPage.drawImage(logoImage, logoDrawInfo);
+            }
 
             // Serializar PDF
             const pdfBytesModified = await pdfDoc.save();

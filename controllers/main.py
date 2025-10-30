@@ -692,6 +692,17 @@ class ProductPlannerPortal(CustomerPortal):
         qr_url = base_url + '/report/barcode/?type=QR&value=' + urllib.parse.quote(xurldownload) + '&width=' + str(qr_width) + '&height=' + str(qr_height)
         overlay_url = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid) + '/' + str(strurl) + '/overlay'
 
+        # Preparar logo en base64 para mostrar sobre el QR (igual que QWeb)
+        logo_b64 = None
+        try:
+            logo_b64 = slide_slide_obj.company_id.logo
+            if isinstance(logo_b64, bytes):
+                logo_b64 = logo_b64.decode('utf-8')
+        except Exception:
+            logo_b64 = None
+
+        logo_src = 'data:image/png;base64,' + logo_b64 if logo_b64 else ''
+
         # Página HTML sin QWeb: diseño 2 columnas con QR (idéntico al original) y visor de certificado
         html_content = """
 <!DOCTYPE html>
@@ -713,6 +724,7 @@ class ProductPlannerPortal(CustomerPortal):
         .title { font-size: 18px; margin: 0 0 12px 0; }
         .muted { color: var(--muted); font-size: 13px; }
         .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+        .logo-img { max-height: 30px; margin-bottom: 6px; object-fit: contain; }
         .qr-img { width: %spx; height: %spx; image-rendering: pixelated; border: 1px solid var(--border); background: #fff; }
         .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
         .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; }
@@ -733,6 +745,7 @@ class ProductPlannerPortal(CustomerPortal):
             <div class="card">
                 <h3 class="title">Código QR</h3>
                 <div class="qr-box">
+                    <img class="logo-img" src="%s" alt="Logo" />
                     <img class="qr-img" src="%s" alt="QR de verificación" />
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     <div class="actions">
@@ -758,20 +771,21 @@ class ProductPlannerPortal(CustomerPortal):
             pdfUrl: '%s',
             qrText: '%s',
             qrSize: '%s',
-            filename: '%s'
+            filename: '%s',
+            logoSrc: '%s'
         };
         document.getElementById('btn-js').addEventListener('click', async () => {
             try {
                 if (!window.qrOverlayManager) throw new Error('qrOverlayManager no inicializado');
-                await window.qrOverlayManager.generateQROverlay(config.pdfUrl, config.qrText, config.qrSize, config.filename);
+                await window.qrOverlayManager.generateQROverlay(config.pdfUrl, config.qrText, config.qrSize, config.filename, config.logoSrc);
             } catch (e) {
                 alert('Error generando por JavaScript: ' + e.message);
             }
         });
-    </script>
+        </script>
 </body>
 </html>
-        """ % (qr_width, qr_height, qr_size, qr_url, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename)
+        """ % (qr_width, qr_height, qr_size, logo_src, qr_url, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename, logo_src)
 
         return werkzeug.wrappers.Response(
             html_content,
