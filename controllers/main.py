@@ -163,18 +163,19 @@ class ProductPlannerPortal(CustomerPortal):
             xurldownload = base_url+'/web/certificado_current/download_pdf/'+str(idcertificado)
         else:
             xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta_final)+'/'+str(xid)+'/'+str(xuserid)
+        # Mapeo calibrado para igualar el tamaño que "ya se tenía"
         if strurl=='print_qr15':
-            w=63
-            h=63
+            w=100
+            h=100
         if strurl=='print_qr35':
-            w=147
-            h=147
+            w=234
+            h=234
         if strurl=='print_qr50':
-            w=210
-            h=210
+            w=333
+            h=333
         if strurl=='print_qr95':
-            w=370
-            h=370
+            w=587
+            h=587
 
         docargs = {
             'xurldownload': xurldownload,
@@ -298,21 +299,21 @@ class ProductPlannerPortal(CustomerPortal):
         else:
             xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta_final)+'/'+str(xid)+'/'+str(xuserid)
         
-        # Configurar tamaño del QR según el parámetro
+        # Configurar tamaño del QR según el parámetro (calibrado)
         qr_width = 150
         qr_height = 150
         if strurl=='print_qr15':
-            qr_width = 63
-            qr_height = 63
+            qr_width = 100
+            qr_height = 100
         elif strurl=='print_qr35':
-            qr_width = 147
-            qr_height = 147
+            qr_width = 234
+            qr_height = 234
         elif strurl=='print_qr50':
-            qr_width = 210
-            qr_height = 210
+            qr_width = 333
+            qr_height = 333
         elif strurl=='print_qr95':
-            qr_width = 370
-            qr_height = 370
+            qr_width = 587
+            qr_height = 587
 
         try:
             # Generar el QR como PDF separado
@@ -480,20 +481,21 @@ class ProductPlannerPortal(CustomerPortal):
             xurldownload = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid)
 
         # Tamaño del QR (en puntos)
+        # Tamaño del QR (en puntos) - mapeo calibrado
         qr_width = 150
         qr_height = 150
         if strurl == 'print_qr15':
-            qr_width = 63
-            qr_height = 63
+            qr_width = 100
+            qr_height = 100
         elif strurl == 'print_qr35':
-            qr_width = 147
-            qr_height = 147
+            qr_width = 234
+            qr_height = 234
         elif strurl == 'print_qr50':
-            qr_width = 210
-            qr_height = 210
+            qr_width = 333
+            qr_height = 333
         elif strurl == 'print_qr95':
-            qr_width = 370
-            qr_height = 370
+            qr_width = 587
+            qr_height = 587
 
         try:
             import io
@@ -668,18 +670,18 @@ class ProductPlannerPortal(CustomerPortal):
         }
         qr_size = qr_size_map.get(strurl, '1.5cm')
 
-        # Dimensiones del QR idénticas al flujo original (px)
-        qr_width = 63
-        qr_height = 63
+        # Dimensiones del QR (px) – mapeo calibrado para igualar lo que "ya se tenía"
+        qr_width = 100
+        qr_height = 100
         if strurl == 'print_qr35':
-            qr_width = 147
-            qr_height = 147
+            qr_width = 234
+            qr_height = 234
         elif strurl == 'print_qr50':
-            qr_width = 210
-            qr_height = 210
+            qr_width = 333
+            qr_height = 333
         elif strurl == 'print_qr95':
-            qr_width = 370
-            qr_height = 370
+            qr_width = 587
+            qr_height = 587
 
         # Nombre del archivo
         if slide_slide_obj.file_name_certificado:

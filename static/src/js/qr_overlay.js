@@ -100,11 +100,16 @@ class QROverlayManager {
         //   9.5 cm -> 370 px
         // (ver controllers/main.py y report/qrcode.xml)
         // Antes estos valores estaban subdimensionados y el QR se veía más pequeño en JS.
+        // Mapeo calibrado (idéntico al tamaño que "ya se tenía")
+        // 1.5 cm -> 100 px
+        // 3.5 cm -> 234 px
+        // 5.0 cm -> 333 px
+        // 9.5 cm -> 587 px
         const sizeMap = {
-            '1.5cm': 63,
-            '3.5cm': 147,
-            '5.0cm': 210,
-            '9.5cm': 370
+            '1.5cm': 100,
+            '3.5cm': 234,
+            '5.0cm': 333,
+            '9.5cm': 587
         };
 
         if (sizeMap[size]) {
