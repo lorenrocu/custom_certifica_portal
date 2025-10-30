@@ -1,95 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Acciones en backend para generar Certificado + QR con overlay -->
+        <!-- Reportes HTML en backend que redirigen automáticamente a la ruta /overlay -->
 
-        <!-- Overlay 1.5 cm -->
-        <record id="action_qr_overlay_backend_15" model="ir.actions.server">
-            <field name="name">Certificado + QR (Overlay) - 1.5cm</field>
-            <field name="model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_type">action</field>
-            <field name="state">code</field>
-            <field name="code"><![CDATA[
-action = {
-    'type': 'ir.actions.act_url',
-    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
-        (record.xtipodocumento.code or 'equiposdemedicion'),
-        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
-        env.user.id,
-        'print_qr15',
-    ),
-    'target': 'new',
-}
-return action
-            ]]></field>
-        </record>
+        <!-- ============ 1.5 cm ============ -->
+        <template id="overlay_backend15_page">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
+            <t t-set="idreg" t-value="(doc.xtipodocumento.code == 'personas') and (doc.personas_id.id or 0) or (doc.xmaquinaria.id or 0)" />
+            <t t-set="uid" t-value="env.user.id" />
+            <t t-set="overlay_url" t-value="'/web/ultimocertificado/%s/%s/%s/print_qr15/overlay' % (ruta_url, idreg, uid)" />
+            <div class="page">
+                <h3>Generando certificado con QR (Overlay) - 1.5cm</h3>
+                <p>Si la descarga no inicia automáticamente, <a t-att-href="overlay_url">haz clic aquí</a>.</p>
+                <script type="text/javascript">window.location = "<t t-esc='overlay_url'/>";</script>
+            </div>
+        </template>
+        <template id="report_overlay_backend15">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.overlay_backend15_page" />
+                </t>
+            </t>
+        </template>
+        <report id="print_qr_overlay_backend15" menu="True" string="Certificado + QR (Overlay) - 1.5cm" model="informes.encuestas.merge" report_type="qweb-html" file="custom_certifica_portal.report_overlay_backend15" name="custom_certifica_portal.report_overlay_backend15"/>
 
-        <!-- Overlay 3.5 cm -->
-        <record id="action_qr_overlay_backend_35" model="ir.actions.server">
-            <field name="name">Certificado + QR (Overlay) - 3.5cm</field>
-            <field name="model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_type">action</field>
-            <field name="state">code</field>
-            <field name="code"><![CDATA[
-action = {
-    'type': 'ir.actions.act_url',
-    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
-        (record.xtipodocumento.code or 'equiposdemedicion'),
-        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
-        env.user.id,
-        'print_qr35',
-    ),
-    'target': 'new',
-}
-return action
-            ]]></field>
-        </record>
+        <!-- ============ 3.5 cm ============ -->
+        <template id="overlay_backend35_page">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
+            <t t-set="idreg" t-value="(doc.xtipodocumento.code == 'personas') and (doc.personas_id.id or 0) or (doc.xmaquinaria.id or 0)" />
+            <t t-set="uid" t-value="env.user.id" />
+            <t t-set="overlay_url" t-value="'/web/ultimocertificado/%s/%s/%s/print_qr35/overlay' % (ruta_url, idreg, uid)" />
+            <div class="page">
+                <h3>Generando certificado con QR (Overlay) - 3.5cm</h3>
+                <p>Si la descarga no inicia automáticamente, <a t-att-href="overlay_url">haz clic aquí</a>.</p>
+                <script type="text/javascript">window.location = "<t t-esc='overlay_url'/>";</script>
+            </div>
+        </template>
+        <template id="report_overlay_backend35">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.overlay_backend35_page" />
+                </t>
+            </t>
+        </template>
+        <report id="print_qr_overlay_backend35" menu="True" string="Certificado + QR (Overlay) - 3.5cm" model="informes.encuestas.merge" report_type="qweb-html" file="custom_certifica_portal.report_overlay_backend35" name="custom_certifica_portal.report_overlay_backend35"/>
 
-        <!-- Overlay 5.0 cm -->
-        <record id="action_qr_overlay_backend_50" model="ir.actions.server">
-            <field name="name">Certificado + QR (Overlay) - 5.0cm</field>
-            <field name="model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_type">action</field>
-            <field name="state">code</field>
-            <field name="code"><![CDATA[
-action = {
-    'type': 'ir.actions.act_url',
-    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
-        (record.xtipodocumento.code or 'equiposdemedicion'),
-        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
-        env.user.id,
-        'print_qr50',
-    ),
-    'target': 'new',
-}
-return action
-            ]]></field>
-        </record>
+        <!-- ============ 5.0 cm ============ -->
+        <template id="overlay_backend50_page">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
+            <t t-set="idreg" t-value="(doc.xtipodocumento.code == 'personas') and (doc.personas_id.id or 0) or (doc.xmaquinaria.id or 0)" />
+            <t t-set="uid" t-value="env.user.id" />
+            <t t-set="overlay_url" t-value="'/web/ultimocertificado/%s/%s/%s/print_qr50/overlay' % (ruta_url, idreg, uid)" />
+            <div class="page">
+                <h3>Generando certificado con QR (Overlay) - 5.0cm</h3>
+                <p>Si la descarga no inicia automáticamente, <a t-att-href="overlay_url">haz clic aquí</a>.</p>
+                <script type="text/javascript">window.location = "<t t-esc='overlay_url'/>";</script>
+            </div>
+        </template>
+        <template id="report_overlay_backend50">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.overlay_backend50_page" />
+                </t>
+            </t>
+        </template>
+        <report id="print_qr_overlay_backend50" menu="True" string="Certificado + QR (Overlay) - 5.0cm" model="informes.encuestas.merge" report_type="qweb-html" file="custom_certifica_portal.report_overlay_backend50" name="custom_certifica_portal.report_overlay_backend50"/>
 
-        <!-- Overlay 9.5 cm -->
-        <record id="action_qr_overlay_backend_95" model="ir.actions.server">
-            <field name="name">Certificado + QR (Overlay) - 9.5cm</field>
-            <field name="model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_model_id" ref="model_informes_encuestas_merge"/>
-            <field name="binding_type">action</field>
-            <field name="state">code</field>
-            <field name="code"><![CDATA[
-action = {
-    'type': 'ir.actions.act_url',
-    'url': '/web/ultimocertificado/%s/%s/%s/%s/overlay' % (
-        (record.xtipodocumento.code or 'equiposdemedicion'),
-        (record.xtipodocumento.code == 'personas' and (record.personas_id.id or 0) or (record.xmaquinaria.id or 0)),
-        env.user.id,
-        'print_qr95',
-    ),
-    'target': 'new',
-}
-return action
-            ]]></field>
-        </record>
+        <!-- ============ 9.5 cm ============ -->
+        <template id="overlay_backend95_page">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
+            <t t-set="idreg" t-value="(doc.xtipodocumento.code == 'personas') and (doc.personas_id.id or 0) or (doc.xmaquinaria.id or 0)" />
+            <t t-set="uid" t-value="env.user.id" />
+            <t t-set="overlay_url" t-value="'/web/ultimocertificado/%s/%s/%s/print_qr95/overlay' % (ruta_url, idreg, uid)" />
+            <div class="page">
+                <h3>Generando certificado con QR (Overlay) - 9.5cm</h3>
+                <p>Si la descarga no inicia automáticamente, <a t-att-href="overlay_url">haz clic aquí</a>.</p>
+                <script type="text/javascript">window.location = "<t t-esc='overlay_url'/>";</script>
+            </div>
+        </template>
+        <template id="report_overlay_backend95">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.overlay_backend95_page" />
+                </t>
+            </t>
+        </template>
+        <report id="print_qr_overlay_backend95" menu="True" string="Certificado + QR (Overlay) - 9.5cm" model="informes.encuestas.merge" report_type="qweb-html" file="custom_certifica_portal.report_overlay_backend95" name="custom_certifica_portal.report_overlay_backend95"/>
 
     </data>
 </odoo>
