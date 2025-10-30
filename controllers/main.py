@@ -668,85 +668,110 @@ class ProductPlannerPortal(CustomerPortal):
         }
         qr_size = qr_size_map.get(strurl, '1.5cm')
 
+        # Dimensiones del QR idénticas al flujo original (px)
+        qr_width = 63
+        qr_height = 63
+        if strurl == 'print_qr35':
+            qr_width = 147
+            qr_height = 147
+        elif strurl == 'print_qr50':
+            qr_width = 210
+            qr_height = 210
+        elif strurl == 'print_qr95':
+            qr_width = 370
+            qr_height = 370
+
         # Nombre del archivo
         if slide_slide_obj.file_name_certificado:
             filename = slide_slide_obj.file_name_certificado.replace('.pdf', '-QR-OVERLAY-JS.pdf')
         else:
             filename = (slide_slide_obj.codigocliente + '-QR-OVERLAY-JS.pdf') if slide_slide_obj.codigocliente else 'CERTIFICADO_QR_OVERLAY_JS.pdf'
 
-        # Página HTML con JavaScript
+        # Construir URLs auxiliares
+        import urllib.parse
+        qr_url = base_url + '/report/barcode/?type=QR&value=' + urllib.parse.quote(xurldownload) + '&width=' + str(qr_width) + '&height=' + str(qr_height)
+        overlay_url = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid) + '/' + str(strurl) + '/overlay'
+
+        # Página HTML sin QWeb: diseño 2 columnas con QR (idéntico al original) y visor de certificado
         html_content = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Generando Certificado con QR</title>
+    <title>Certificado + QR (Vista)</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .loading { margin: 20px 0; }
-        .error { color: red; margin: 20px 0; }
-        .success { color: green; margin: 20px 0; }
+        :root {
+            --bg: #f6f8fa; --card: #fff; --text: #1f2937; --muted: #6b7280; --primary: #2563eb; --border: #e5e7eb;
+        }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+        .wrapper { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .header { margin-bottom: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
+        @media (max-width: 992px) { .grid { grid-template-columns: 1fr; } }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.03); }
+        .title { font-size: 18px; margin: 0 0 12px 0; }
+        .muted { color: var(--muted); font-size: 13px; }
+        .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+        .qr-img { width: %spx; height: %spx; image-rendering: pixelated; border: 1px solid var(--border); background: #fff; }
+        .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+        .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; }
+        .btn.secondary { background:#111827; }
+        .btn.outline { background:#fff; color:#111827; border:1px solid var(--border); }
+        .pdf-viewer { width: 100%%; height: 75vh; border: 1px solid var(--border); border-radius: 8px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Generando Certificado con QR (JavaScript)</h2>
-        <p>Tamaño del QR: <strong>%s</strong></p>
-        <div id="status" class="loading">Cargando librerías JavaScript...</div>
-        <div id="progress"></div>
-        
-        <script src="/custom_certifica_portal/static/src/js/qr_overlay.js?v=20251030"></script>
-        <script>
-            const config = {
-                pdfUrl: '%s',
-                qrText: '%s',
-                qrSize: '%s',
-                filename: '%s'
-            };
-            
-            async function initOverlay() {
-                try {
-                    document.getElementById('status').textContent = 'Esperando librerías...';
-                    
-                    // Esperar a que se carguen las librerías
-                    let attempts = 0;
-                    while (!window.qrOverlayManager && attempts < 50) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        attempts++;
-                    }
-                    
-                    if (!window.qrOverlayManager) {
-                        throw new Error('No se pudieron cargar las librerías JavaScript');
-                    }
-                    
-                    document.getElementById('status').textContent = 'Generando certificado con QR...';
-                    
-                    // Generar overlay
-                    await window.qrOverlayManager.generateQROverlay(
-                        config.pdfUrl,
-                        config.qrText,
-                        config.qrSize,
-                        config.filename
-                    );
-                    
-                    document.getElementById('status').className = 'success';
-                    document.getElementById('status').textContent = '¡Certificado generado exitosamente!';
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    document.getElementById('status').className = 'error';
-                    document.getElementById('status').textContent = 'Error: ' + error.message;
-                }
-            }
-            
-            // Iniciar cuando se cargue la página
-            window.addEventListener('load', initOverlay);
-        </script>
+    <div class="wrapper">
+        <div class="header">
+            <h2 style="margin:0">Certificado + QR (JavaScript)</h2>
+            <p class="muted">Tamaño del QR: <strong>%s</strong> • El QR mostrado es el MISMO que se usa para la verificación.</p>
+        </div>
+
+        <div class="grid">
+            <!-- Columna izquierda: QR idéntico al original -->
+            <div class="card">
+                <h3 class="title">Código QR</h3>
+                <div class="qr-box">
+                    <img class="qr-img" src="%s" alt="QR de verificación" />
+                    <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
+                    <div class="actions">
+                        <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
+                        <button class="btn" id="btn-js">Descargar PDF con QR (JavaScript)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna derecha: visor del certificado normal -->
+            <div class="card">
+                <h3 class="title">Certificado</h3>
+                <object class="pdf-viewer" data="%s" type="application/pdf">
+                    <p>No se pudo incrustar el PDF en el navegador. <a href="%s" target="_blank">Descargar certificado</a></p>
+                </object>
+            </div>
+        </div>
     </div>
+
+    <script src="/custom_certifica_portal/static/src/js/qr_overlay.js?v=20251030"></script>
+    <script>
+        const config = {
+            pdfUrl: '%s',
+            qrText: '%s',
+            qrSize: '%s',
+            filename: '%s'
+        };
+        document.getElementById('btn-js').addEventListener('click', async () => {
+            try {
+                if (!window.qrOverlayManager) throw new Error('qrOverlayManager no inicializado');
+                await window.qrOverlayManager.generateQROverlay(config.pdfUrl, config.qrText, config.qrSize, config.filename);
+            } catch (e) {
+                alert('Error generando por JavaScript: ' + e.message);
+            }
+        });
+    </script>
 </body>
 </html>
-        """ % (qr_size, pdf_url, xurldownload, qr_size, filename)
+        """ % (qr_width, qr_height, qr_size, qr_url, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename)
 
         return werkzeug.wrappers.Response(
             html_content,
