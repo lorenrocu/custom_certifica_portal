@@ -575,7 +575,182 @@ class ProductPlannerPortal(CustomerPortal):
             _logger.error("print_certificate_with_qr_overlay - Error generando PDF overlay: %s" % str(e))
             return self._return_error_response("Error generando el certificado con QR incrustado: %s" % str(e))
 
-    @http.route('/web/equipos/download_pdf/<id>', type='http', auth="public",website=True)
+    @http.route([
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js',
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js'
+    ], type='http', auth="user", website=True)
+    def print_certificate_with_qr_overlay_js(self, **kwargs):
+        """
+        Endpoint para la solución JavaScript de overlay QR.
+        Proporciona una página HTML que usa JavaScript para superponer el QR.
+        """
+        strurlruta = kwargs.get('ruta_url')
+        strurl = kwargs.get('ruta_urlqr')
+        idcertificado = kwargs.get('idcertificado')
+        xid = kwargs.get('id')
+        xuserid = kwargs.get('userid')
+
+        _logger.info("print_certificate_with_qr_overlay_js - Generando página JS para tipo: '%s'" % strurlruta)
+
+        # Validación de parámetros obligatorios
+        if not strurlruta:
+            return self._return_error_response("Parámetro ruta_url requerido")
+        if not xid or xid == 'False':
+            return self._return_error_response("ID de registro inválido")
+        if not xuserid or xuserid == 'False':
+            return self._return_error_response("ID de usuario inválido")
+
+        # Búsqueda dinámica del tipo de documento
+        tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
+        if not tiposdocumentos:
+            return self._return_error_response("Tipo de documento '%s' no encontrado" % strurlruta)
+
+        # Conversión segura
+        registro_id = int(xid) if xid and str(xid).isdigit() else False
+        cliente_id = int(xuserid) if xuserid and str(xuserid).isdigit() else False
+
+        # Búsqueda del certificado
+        if strurlruta_final == 'personas':
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('personas_id', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+        else:
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('xmaquinaria', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+
+        slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc', limit=1)
+
+        # Fallback con parent_id
+        if not slide_slide_obj and cliente_id:
+            try:
+                partner = request.env['res.partner'].sudo().browse(cliente_id)
+                if partner and partner.parent_id:
+                    domain_parent = [(d[0], d[1], d[2]) for d in domain]
+                    for i, d in enumerate(domain_parent):
+                        if d[0] == 'cliente_id':
+                            domain_parent[i] = ('cliente_id', '=', partner.parent_id.id)
+                    slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain_parent, order='fecha_vigencia desc', limit=1)
+            except Exception as e:
+                _logger.error("print_certificate_with_qr_overlay_js - Error en fallback parent_id: %s" % str(e))
+
+        if not slide_slide_obj:
+            return self._return_error_response("Certificado no encontrado")
+
+        # PDF original
+        original_pdf = slide_slide_obj.x_certificado_publicado_file
+        if not original_pdf:
+            return self._return_error_response("El certificado no tiene archivo PDF asociado")
+
+        # Base URL
+        urlbase = request.env['ir.config_parameter'].sudo().search([('key', '=', 'web.base.url')])
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+
+        # URL de verificación para el QR
+        if strurlruta_final == 'personas':
+            xurldownload = base_url + '/web/certificado_current/download_pdf/' + str(idcertificado if idcertificado else slide_slide_obj.id)
+        else:
+            xurldownload = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid)
+
+        # URL del PDF original
+        pdf_url = base_url + '/web/content/informes.encuestas.merge/' + str(slide_slide_obj.id) + '/x_certificado_publicado_file'
+
+        # Tamaño del QR
+        qr_size_map = {
+            'print_qr15': '1.5cm',
+            'print_qr35': '3.5cm',
+            'print_qr50': '5.0cm',
+            'print_qr95': '9.5cm'
+        }
+        qr_size = qr_size_map.get(strurl, '1.5cm')
+
+        # Nombre del archivo
+        if slide_slide_obj.file_name_certificado:
+            filename = slide_slide_obj.file_name_certificado.replace('.pdf', '-QR-OVERLAY-JS.pdf')
+        else:
+            filename = (slide_slide_obj.codigocliente + '-QR-OVERLAY-JS.pdf') if slide_slide_obj.codigocliente else 'CERTIFICADO_QR_OVERLAY_JS.pdf'
+
+        # Página HTML con JavaScript
+        html_content = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generando Certificado con QR</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .loading { margin: 20px 0; }
+        .error { color: red; margin: 20px 0; }
+        .success { color: green; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Generando Certificado con QR (JavaScript)</h2>
+        <p>Tamaño del QR: <strong>%s</strong></p>
+        <div id="status" class="loading">Cargando librerías JavaScript...</div>
+        <div id="progress"></div>
+        
+        <script src="/custom_certifica_portal/static/src/js/qr_overlay.js"></script>
+        <script>
+            const config = {
+                pdfUrl: '%s',
+                qrText: '%s',
+                qrSize: '%s',
+                filename: '%s'
+            };
+            
+            async function initOverlay() {
+                try {
+                    document.getElementById('status').textContent = 'Esperando librerías...';
+                    
+                    // Esperar a que se carguen las librerías
+                    let attempts = 0;
+                    while (!window.qrOverlayManager && attempts < 50) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        attempts++;
+                    }
+                    
+                    if (!window.qrOverlayManager) {
+                        throw new Error('No se pudieron cargar las librerías JavaScript');
+                    }
+                    
+                    document.getElementById('status').textContent = 'Generando certificado con QR...';
+                    
+                    // Generar overlay
+                    await window.qrOverlayManager.generateQROverlay(
+                        config.pdfUrl,
+                        config.qrText,
+                        config.qrSize
+                    );
+                    
+                    document.getElementById('status').className = 'success';
+                    document.getElementById('status').textContent = '¡Certificado generado exitosamente!';
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('status').className = 'error';
+                    document.getElementById('status').textContent = 'Error: ' + error.message;
+                }
+            }
+            
+            // Iniciar cuando se cargue la página
+            window.addEventListener('load', initOverlay);
+        </script>
+    </div>
+</body>
+</html>
+        """ % (qr_size, pdf_url, xurldownload, qr_size, filename)
+
+        return werkzeug.wrappers.Response(
+            html_content,
+            headers={'Content-Type': 'text/html; charset=utf-8'}
+        )
     def download_equipos_patrones_pdf(self,id,**kwargs):
         equipo = request.env['informes.encuestas.equipos'].sudo().search([('id','=',id)],limit=1)
         filename=''

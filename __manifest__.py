@@ -21,6 +21,7 @@
         'report/qrcode_backend50.xml',
         'report/qrcode_backend95.xml',
         'report/qrcode_overlay_backend.xml',
+        'report/qrcode_overlay_js_backend.xml',
         'report/qrcode_combined.xml',
         'views/templates.xml',
          'views/templates_personas.xml',

@@ -186,6 +186,13 @@
                         <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/overlay')" title="QR incrustado (Overlay) 5.0cm" target="_blank" style="margin-top: 4px; font-size: 10px;">
                           <i class="fa fa-magic"/> Overlay 5.0cm
                         </a>
+                        <!-- Nuevo: JavaScript (QR sin dependencias del servidor) -->
+                        <a class="btn btn-success btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/overlay_js')" title="QR JavaScript 1.5cm (Recomendado)" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-code"/> JS 1.5cm
+                        </a>
+                        <a class="btn btn-success btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/overlay_js')" title="QR JavaScript 5.0cm (Recomendado)" target="_blank" style="margin-top: 4px; font-size: 10px;">
+                          <i class="fa fa-code"/> JS 5.0cm
+                        </a>
                       </div>
                     </td>
                     <td><span t-field="certificado.fecha_monitoreo"/></td>
