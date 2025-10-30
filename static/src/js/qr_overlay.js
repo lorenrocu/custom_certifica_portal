@@ -221,96 +221,84 @@ class QROverlayManager {
                 throw new Error(`No se pudo obtener la imagen del QR (HTTP ${imgResp.status})`);
             }
             const imgBlob = await imgResp.blob();
-            const imgArrayBuffer = await imgBlob.arrayBuffer();
-            // Debug opcional: ver el QR en la página y en consola
-            if (new URLSearchParams(window.location.search).get('debug') === '1') {
-                console.log('🧪 DEBUG QR: tamaño blob=', imgBlob.size, 'bytes');
-                const previewUrl = URL.createObjectURL(imgBlob);
-                const previewImg = document.createElement('img');
-                previewImg.src = previewUrl;
-                previewImg.alt = 'QR preview (debug)';
-                previewImg.style.cssText = 'position:fixed; right:10px; bottom:10px; width:150px; height:150px; border:1px solid #ccc; background:#fff; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,.2)';
-                document.body.appendChild(previewImg);
-                setTimeout(() => URL.revokeObjectURL(previewUrl), 30000);
-            }
-            const qrImage = await pdfDoc.embedPng(imgArrayBuffer);
+            const objUrl = URL.createObjectURL(imgBlob);
 
-            // Si hay logo, prepararlo
-            let logoImage = null;
+            // Cargar QR en elemento Image (para componer en canvas)
+            const tmpQrImg = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = objUrl;
+            });
+
+            // Cargar logo (si existe) en elemento Image
+            let tmpLogoImg = null;
             if (logoSrc) {
                 try {
-                    // Permitir tanto DataURL como URL normal
-                    let logoBytes;
-                    if (logoSrc.startsWith('data:image')) {
-                        // Convertir DataURL a ArrayBuffer
-                        const base64 = logoSrc.split(',')[1];
-                        const binaryString = atob(base64);
-                        const len = binaryString.length;
-                        const bytes = new Uint8Array(len);
-                        for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-                        logoBytes = bytes;
-                    } else {
-                        const logoResp = await fetch(logoSrc, { credentials: 'same-origin' });
-                        const logoBlob = await logoResp.blob();
-                        logoBytes = new Uint8Array(await logoBlob.arrayBuffer());
-                    }
-                    logoImage = await pdfDoc.embedPng(logoBytes);
+                    tmpLogoImg = await new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = reject;
+                        img.src = logoSrc;
+                    });
                 } catch (e) {
-                    console.warn('No se pudo incrustar el logo en el PDF:', e);
+                    console.warn('No se pudo cargar el logo para componer:', e);
+                    tmpLogoImg = null;
                 }
             }
+
+            // Componer en canvas una sola imagen (logo arriba + QR abajo)
+            const spacingPx = 6;
+            const logoHeightPx = tmpLogoImg ? Math.round(qrWidthPx * 0.48) : 0;
+            const compositeWidthPx = qrWidthPx;
+            const compositeHeightPx = qrHeightPx + logoHeightPx + (tmpLogoImg ? spacingPx : 0);
+            const canvas = document.createElement('canvas');
+            canvas.width = compositeWidthPx;
+            canvas.height = compositeHeightPx;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, compositeWidthPx, compositeHeightPx);
+
+            // Logo (centrado) si existe
+            if (tmpLogoImg) {
+                const scale = logoHeightPx / tmpLogoImg.naturalHeight;
+                const logoWidthDrawPx = Math.round(tmpLogoImg.naturalWidth * scale);
+                const logoX = Math.max(0, Math.round((compositeWidthPx - logoWidthDrawPx) / 2));
+                ctx.drawImage(tmpLogoImg, logoX, 0, logoWidthDrawPx, logoHeightPx);
+            }
+
+            // QR (debajo del logo)
+            const qrY = (tmpLogoImg ? logoHeightPx + spacingPx : 0);
+            ctx.drawImage(tmpQrImg, 0, qrY, qrWidthPx, qrHeightPx);
+
+            // Convertir canvas a PNG y embeber como UNA sola imagen en el PDF
+            const dataUrl = canvas.toDataURL('image/png');
+            const compositeBytes = this.dataURLToUint8Array(dataUrl);
+            const compositePdfImage = await pdfDoc.embedPng(compositeBytes);
+
+            // Limpiar URL temporal
+            URL.revokeObjectURL(objUrl);
 
             // Obtener primera página
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
             const { width, height } = firstPage.getSize();
 
-            // Calcular posición (esquina superior derecha)
-            // Usamos el mismo tamaño en PUNTOS que el flujo original (tratando px=pt),
-            // para que visualmente coincida con el PDF generado por QWeb/servidor.
-            const qrSizePoints = qrWidthPx; // mantener consistencia visual con backend
-            const x = width - qrSizePoints - 20;
+            // Posición (esquina superior derecha) y tamaño en puntos (px≈pt para mantener consistencia visual)
+            const x = width - compositeWidthPx - 20;
+            const y = height - compositeHeightPx - 20;
 
-            // Si hay logo, reservar espacio por encima del QR
-            const spacing = 6; // separación entre logo y QR
-            let y;
-            let logoDrawInfo = null;
-            if (logoImage) {
-                // Altura del logo proporcional al tamaño del QR, igual que en QWeb (~30px sobre 63px -> ~0.48)
-                const logoHeight = Math.round(qrSizePoints * 0.48);
-                const scale = logoHeight / logoImage.height;
-                const logoWidth = Math.round(logoImage.width * scale);
-                // Centrar el logo respecto al QR
-                const logoX = x + Math.max(0, (qrSizePoints - logoWidth) / 2);
-                const logoY = height - logoHeight - 20; // 20pt de margen superior
-                logoDrawInfo = { x: logoX, y: logoY, width: logoWidth, height: logoHeight };
-                // Posicionar el QR justo debajo del logo con un pequeño espaciado
-                y = logoY - spacing - qrSizePoints;
-            } else {
-                // Sin logo: ubicar QR a 20pt del borde superior
-                y = height - qrSizePoints - 20;
-            }
-
-            // Dibujar QR
-            firstPage.drawImage(qrImage, {
+            firstPage.drawImage(compositePdfImage, {
                 x,
                 y,
-                width: qrSizePoints,
-                height: qrSizePoints,
+                width: compositeWidthPx,
+                height: compositeHeightPx,
             });
 
-            // Dibujar logo si está disponible
-            if (logoDrawInfo) {
-                firstPage.drawImage(logoImage, logoDrawInfo);
-            }
-
-            // Serializar PDF
+            // Serializar PDF y descargar
             const pdfBytesModified = await pdfDoc.save();
-
-            // Descargar
             this.downloadFile(pdfBytesModified, filename);
-
-            console.log('✅ Overlay con QR real generado exitosamente');
+            console.log('✅ Overlay con QR + logo compuesto en una sola imagen generado exitosamente');
             return true;
 
         } catch (error) {
@@ -327,7 +315,7 @@ class QROverlayManager {
      * - Renderiza en un canvas con imageSmoothingEnabled=false
      * - Asigna el resultado (dataURL) al <img> destino
      */
-    async updateQRPreview(imgSelector, qrText, targetPx) {
+    async updateQRPreview(imgSelector, qrText, targetPx, logoSrc = null) {
         try {
             const imgEl = document.querySelector(imgSelector);
             if (!imgEl) return;
@@ -344,14 +332,47 @@ class QROverlayManager {
 
             await new Promise((resolve, reject) => {
                 const tmpImg = new Image();
-                tmpImg.onload = () => {
+                tmpImg.onload = async () => {
+                    // Si hay logo, componer un canvas más alto
+                    const spacing = 6;
+                    let logoImg = null;
+                    let logoHeight = 0;
+                    if (logoSrc) {
+                        try {
+                            logoImg = await new Promise((res, rej) => {
+                                const li = new Image();
+                                li.onload = () => res(li);
+                                li.onerror = rej;
+                                li.src = logoSrc;
+                            });
+                            logoHeight = Math.round(targetPx * 0.48);
+                        } catch (e) {
+                            console.warn('No se pudo cargar el logo para la vista previa:', e);
+                            logoImg = null;
+                            logoHeight = 0;
+                        }
+                    }
+
                     const canvas = document.createElement('canvas');
+                    const compositeHeight = targetPx + (logoImg ? (logoHeight + spacing) : 0);
                     canvas.width = targetPx;
-                    canvas.height = targetPx;
+                    canvas.height = compositeHeight;
                     const ctx = canvas.getContext('2d');
                     ctx.imageSmoothingEnabled = false;
-                    ctx.clearRect(0, 0, targetPx, targetPx);
-                    ctx.drawImage(tmpImg, 0, 0, targetPx, targetPx);
+                    ctx.clearRect(0, 0, targetPx, compositeHeight);
+
+                    // Dibujar logo centrado si existe
+                    if (logoImg) {
+                        const scale = logoHeight / logoImg.naturalHeight;
+                        const logoWidthDraw = Math.round(logoImg.naturalWidth * scale);
+                        const logoX = Math.max(0, Math.round((targetPx - logoWidthDraw) / 2));
+                        ctx.drawImage(logoImg, logoX, 0, logoWidthDraw, logoHeight);
+                    }
+
+                    // Dibujar QR debajo del logo
+                    const qrY = logoImg ? (logoHeight + spacing) : 0;
+                    ctx.drawImage(tmpImg, 0, qrY, targetPx, targetPx);
+
                     const dataUrl = canvas.toDataURL('image/png');
                     imgEl.src = dataUrl;
                     imgEl.style.imageRendering = 'pixelated';
@@ -364,6 +385,19 @@ class QROverlayManager {
         } catch (e) {
             console.warn('No se pudo actualizar la vista previa del QR sin borrosidad:', e);
         }
+    }
+
+    /**
+     * Utilidad: convertir un dataURL en Uint8Array para PDFLib
+     */
+    dataURLToUint8Array(dataURL) {
+        const parts = dataURL.split(',');
+        const base64 = parts[1] || '';
+        const binaryString = atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+        return bytes;
     }
 
     /**
