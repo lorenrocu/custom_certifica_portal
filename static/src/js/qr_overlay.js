@@ -210,7 +210,11 @@ class QROverlayManager {
             // Obtener imagen PNG del QR desde el backend (misma técnica que el controlador Python)
             const qrWidthPx = this.convertSizeToPixels(qrSize);
             const qrHeightPx = this.convertSizeToPixels(qrSize);
-            const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${qrWidthPx}&height=${qrHeightPx}`;
+            // Para evitar borrosidad, pedimos el PNG del backend en mayor resolución
+            const oversampling = 4; // factor de sobre-muestreo para mejorar nitidez
+            const fetchWidth = Math.max(100, Math.round(qrWidthPx * oversampling));
+            const fetchHeight = Math.max(100, Math.round(qrHeightPx * oversampling));
+            const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
             console.log('🖼️ Obteniendo QR desde:', qrUrl);
             const imgResp = await fetch(qrUrl, { credentials: 'same-origin' });
             if (!imgResp.ok) {

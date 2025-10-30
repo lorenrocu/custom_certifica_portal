@@ -514,7 +514,10 @@ class ProductPlannerPortal(CustomerPortal):
             page_height = float(first_page.mediabox.height)
 
             # Generar imagen PNG del QR usando el endpoint de barcode
-            qr_url = base_url + '/report/barcode/?type=QR&value=' + urllib.parse.quote(xurldownload) + '&width=' + str(qr_width) + '&height=' + str(qr_height)
+            # Para mejorar la nitidez del QR en el PDF, solicitar imagen con sobre-muestreo
+            qr_fetch_width = max(100, int(qr_width * 4))
+            qr_fetch_height = max(100, int(qr_height * 4))
+            qr_url = base_url + '/report/barcode/?type=QR&value=' + urllib.parse.quote(xurldownload) + '&width=' + str(qr_fetch_width) + '&height=' + str(qr_fetch_height)
             _logger.info("print_certificate_with_qr_overlay - Generando QR desde URL: %s" % qr_url)
             resp = requests.get(qr_url, timeout=10)
             if resp.status_code != 200:
