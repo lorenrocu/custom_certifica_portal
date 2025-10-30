@@ -316,10 +316,13 @@ class ProductPlannerPortal(CustomerPortal):
 
         try:
             # Generar el QR como PDF separado
+            # El reporte print_qr espera las claves 'h' y 'w' (alto y ancho)
+            # para mapearlas en la URL del barcode como width y height.
+            # Ajustamos los argumentos para que el tamaño del QR se respete.
             docargs = {
                 'xurldownload': xurldownload,
-                'qr_width': qr_width,
-                'qr_height': qr_height,
+                'h': qr_width,   # width
+                'w': qr_height,  # height
             }
             
             qr_pdf_data = request.env.ref('custom_certifica_portal.print_qr').sudo().render_qweb_pdf([slide_slide_obj.id], docargs)[0]
@@ -382,6 +385,195 @@ class ProductPlannerPortal(CustomerPortal):
         except Exception as e:
             _logger.error("print_certificate_with_qr_combined - Error generando PDF combinado: %s" % str(e))
             return self._return_error_response("Error generando el certificado con QR: %s" % str(e))
+
+    @http.route([
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay',
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay'
+    ], type='http', auth="user", website=True)
+    def print_certificate_with_qr_overlay(self, **kwargs):
+        """
+        Genera un PDF del certificado original con el QR incrustado (superpuesto) en la primera página.
+        No reemplaza el flujo actual; expone una nueva ruta '/overlay' para pruebas.
+        """
+        strurlruta = kwargs.get('ruta_url')
+        strurl = kwargs.get('ruta_urlqr')
+        idcertificado = kwargs.get('idcertificado')
+        xid = kwargs.get('id')
+        xuserid = kwargs.get('userid')
+
+        _logger.info("print_certificate_with_qr_overlay - Generando certificado con QR incrustado para tipo: '%s'" % strurlruta)
+
+        # Validación de parámetros obligatorios
+        if not strurlruta:
+            _logger.error("print_certificate_with_qr_overlay - Parámetro ruta_url faltante")
+            return self._return_error_response("Parámetro ruta_url requerido")
+        if not xid or xid == 'False':
+            _logger.error("print_certificate_with_qr_overlay - Parámetro id inválido: %s" % xid)
+            return self._return_error_response("ID de registro inválido")
+        if not xuserid or xuserid == 'False':
+            _logger.error("print_certificate_with_qr_overlay - Parámetro userid inválido: %s" % xuserid)
+            return self._return_error_response("ID de usuario inválido")
+
+        # Búsqueda dinámica del tipo de documento
+        tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
+        if not tiposdocumentos:
+            _logger.error("print_certificate_with_qr_overlay - Tipo de documento no encontrado para: '%s'" % strurlruta)
+            return self._return_error_response("No se puede generar certificado: Tipo de documento '%s' no encontrado" % strurlruta)
+        if strurlruta != strurlruta_final:
+            _logger.info("print_certificate_with_qr_overlay - Tipo mapeado: '%s' -> '%s'" % (strurlruta, strurlruta_final))
+
+        # Conversión segura
+        registro_id = int(xid) if xid and str(xid).isdigit() else False
+        cliente_id = int(xuserid) if xuserid and str(xuserid).isdigit() else False
+
+        # Búsqueda del certificado
+        if strurlruta_final == 'personas':
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('personas_id', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+        else:
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('xmaquinaria', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+        _logger.info("print_certificate_with_qr_overlay - Dominio de búsqueda: %s" % domain)
+
+        slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc', limit=1)
+
+        # Fallback con parent_id
+        if not slide_slide_obj and cliente_id:
+            try:
+                partner = request.env['res.partner'].sudo().browse(cliente_id)
+                if partner and partner.parent_id:
+                    domain_parent = [(d[0], d[1], d[2]) for d in domain]
+                    for i, d in enumerate(domain_parent):
+                        if d[0] == 'cliente_id':
+                            domain_parent[i] = ('cliente_id', '=', partner.parent_id.id)
+                    _logger.warning("print_certificate_with_qr_overlay - Fallback usando parent_id=%s con dominio: %s" % (partner.parent_id.id, domain_parent))
+                    slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain_parent, order='fecha_vigencia desc', limit=1)
+            except Exception as e:
+                _logger.error("print_certificate_with_qr_overlay - Error en fallback parent_id: %s" % str(e))
+
+        if not slide_slide_obj:
+            _logger.error("print_certificate_with_qr_overlay - No se encontró certificado con dominio: %s" % domain)
+            return self._return_error_response("Certificado no encontrado")
+
+        _logger.info("print_certificate_with_qr_overlay - Certificado encontrado: ID=%s" % slide_slide_obj.id)
+
+        # PDF original
+        original_pdf = slide_slide_obj.x_certificado_publicado_file
+        if not original_pdf:
+            _logger.error("print_certificate_with_qr_overlay - Certificado ID=%s no tiene archivo PDF" % slide_slide_obj.id)
+            return self._return_error_response("El certificado no tiene archivo PDF asociado")
+
+        # Base URL
+        urlbase = request.env['ir.config_parameter'].sudo().search([('key', '=', 'web.base.url')])
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+
+        # URL de verificación para el QR
+        if strurlruta_final == 'personas':
+            xurldownload = base_url + '/web/certificado_current/download_pdf/' + str(idcertificado if idcertificado else slide_slide_obj.id)
+        else:
+            xurldownload = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid)
+
+        # Tamaño del QR (en puntos)
+        qr_width = 150
+        qr_height = 150
+        if strurl == 'print_qr15':
+            qr_width = 63
+            qr_height = 63
+        elif strurl == 'print_qr35':
+            qr_width = 147
+            qr_height = 147
+        elif strurl == 'print_qr50':
+            qr_width = 210
+            qr_height = 210
+        elif strurl == 'print_qr95':
+            qr_width = 370
+            qr_height = 370
+
+        try:
+            import io
+            import base64
+            from PyPDF2 import PdfReader, PdfWriter
+            import urllib.parse
+            import requests
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.utils import ImageReader
+
+            # Leer PDF original
+            original_pdf_bytes = base64.b64decode(original_pdf)
+            original_reader = PdfReader(io.BytesIO(original_pdf_bytes))
+            first_page = original_reader.pages[0]
+            page_width = float(first_page.mediabox.width)
+            page_height = float(first_page.mediabox.height)
+
+            # Generar imagen PNG del QR usando el endpoint de barcode
+            qr_url = base_url + '/report/barcode/?type=QR&value=' + urllib.parse.quote(xurldownload) + '&width=' + str(qr_width) + '&height=' + str(qr_height)
+            _logger.info("print_certificate_with_qr_overlay - Generando QR desde URL: %s" % qr_url)
+            resp = requests.get(qr_url, timeout=10)
+            if resp.status_code != 200:
+                _logger.error("print_certificate_with_qr_overlay - Error obteniendo imagen QR: status=%s" % resp.status_code)
+                return self._return_error_response("No se pudo generar la imagen del QR")
+
+            # Crear PDF de overlay con el QR posicionado en la esquina superior derecha
+            overlay_buffer = io.BytesIO()
+            c = canvas.Canvas(overlay_buffer, pagesize=(page_width, page_height))
+            margin = 30  # margen desde el borde
+            x_pos = page_width - qr_width - margin
+            y_pos = page_height - qr_height - margin
+            img_reader = ImageReader(io.BytesIO(resp.content))
+            c.drawImage(img_reader, x_pos, y_pos, width=qr_width, height=qr_height, preserveAspectRatio=True, mask='auto')
+            c.save()
+            overlay_pdf_bytes = overlay_buffer.getvalue()
+            overlay_buffer.close()
+
+            overlay_reader = PdfReader(io.BytesIO(overlay_pdf_bytes))
+            overlay_page = overlay_reader.pages[0]
+
+            # Fusionar overlay en la primera página
+            try:
+                first_page.merge_page(overlay_page)
+            except Exception:
+                # Compatibilidad con versiones antiguas de PyPDF2
+                if hasattr(first_page, 'mergePage'):
+                    first_page.mergePage(overlay_page)
+
+            # Crear writer y añadir páginas
+            writer = PdfWriter()
+            writer.add_page(first_page)
+            for i in range(1, len(original_reader.pages)):
+                writer.add_page(original_reader.pages[i])
+
+            output_buffer = io.BytesIO()
+            writer.write(output_buffer)
+            final_pdf_data = output_buffer.getvalue()
+            output_buffer.close()
+
+            # Nombre del archivo
+            if slide_slide_obj.file_name_certificado:
+                filename = slide_slide_obj.file_name_certificado.replace('.pdf', '-QR-OVERLAY.pdf')
+            else:
+                filename = (slide_slide_obj.codigocliente + '-QR-OVERLAY.pdf') if slide_slide_obj.codigocliente else 'CERTIFICADO_QR_OVERLAY.pdf'
+
+            # Respuesta
+            response = werkzeug.wrappers.Response()
+            response.data = final_pdf_data
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = 'attachment; filename="%s"' % filename
+            response.mimetype = 'application/pdf'
+            _logger.info("print_certificate_with_qr_overlay - PDF generado exitosamente: %s" % filename)
+            return response
+
+        except ImportError as e:
+            _logger.error("print_certificate_with_qr_overlay - Dependencia faltante: %s" % str(e))
+            return self._return_error_response("Dependencias faltantes para overlay (PyPDF2 y reportlab)")
+        except Exception as e:
+            _logger.error("print_certificate_with_qr_overlay - Error generando PDF overlay: %s" % str(e))
+            return self._return_error_response("Error generando el certificado con QR incrustado: %s" % str(e))
 
     @http.route('/web/equipos/download_pdf/<id>', type='http', auth="public",website=True)
     def download_equipos_patrones_pdf(self,id,**kwargs):

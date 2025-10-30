@@ -203,6 +203,21 @@
                   </div>
                 </div>
 
+                <!-- Nuevo: Certificado con QR incrustado (Overlay) para pruebas -->
+                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 15px; border-top: 1px dashed #cccccc; padding-top: 10px;">
+                  <div style="width: 100%; text-align: center; margin-bottom: 10px;">
+                    <h6 style="color: #2E86AB; margin: 0;">
+                      <i class="fa fa-qrcode"/> QR incrustado (Overlay) - Beta
+                    </h6>
+                    <small style="color: #666;">Superpone el QR en la primera página del certificado original</small>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-warning btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/overlay')" title="Certificado con QR incrustado 1.5cm" target="_blank">
+                      <i class="fa fa-magic"/> Overlay 1.5 cm
+                    </a>
+                  </div>
+                </div>
+
 
 
               </li>

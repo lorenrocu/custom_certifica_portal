@@ -179,6 +179,13 @@
                         <a class="btn btn-primary btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/combined')" title="Certificado Completo con QR 5.0cm" target="_blank" style="font-size: 10px;">
                           <i class="fa fa-download"/> 5.0cm
                         </a>
+                        <!-- Nuevo: Overlay (QR incrustado) para pruebas -->
+                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/overlay')" title="QR incrustado (Overlay) 1.5cm" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-magic"/> Overlay 1.5cm
+                        </a>
+                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/overlay')" title="QR incrustado (Overlay) 5.0cm" target="_blank" style="margin-top: 4px; font-size: 10px;">
+                          <i class="fa fa-magic"/> Overlay 5.0cm
+                        </a>
                       </div>
                     </td>
                     <td><span t-field="certificado.fecha_monitoreo"/></td>
