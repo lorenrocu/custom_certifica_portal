@@ -730,7 +730,7 @@ class ProductPlannerPortal(CustomerPortal):
         .muted { color: var(--muted); font-size: 13px; }
         .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
         .logo-img { max-height: 30px; margin-bottom: 6px; object-fit: contain; }
-        .qr-img { width: %spx; height: %spx; image-rendering: pixelated; border: 1px solid var(--border); background: #fff; }
+        .qr-img { width: %spx; height: %spx; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid var(--border); background: #fff; }
         .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
         .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; }
         .btn.secondary { background:#111827; }
@@ -787,6 +787,13 @@ class ProductPlannerPortal(CustomerPortal):
                 alert('Error generando por JavaScript: ' + e.message);
             }
         });
+        // Actualizar vista previa del QR en la tarjeta para evitar borrosidad
+        try {
+            const targetPx = window.qrOverlayManager.convertSizeToPixels(config.qrSize);
+            window.qrOverlayManager.updateQRPreview('.qr-img', config.qrText, targetPx);
+        } catch (e) {
+            console.warn('No se pudo actualizar la vista previa del QR:', e);
+        }
         </script>
 </body>
 </html>

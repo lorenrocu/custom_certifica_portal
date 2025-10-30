@@ -322,6 +322,51 @@ class QROverlayManager {
     }
 
     /**
+     * Actualizar la vista previa del QR en el HTML sin borrosidad
+     * - Descarga el PNG del backend con sobre-muestreo
+     * - Renderiza en un canvas con imageSmoothingEnabled=false
+     * - Asigna el resultado (dataURL) al <img> destino
+     */
+    async updateQRPreview(imgSelector, qrText, targetPx) {
+        try {
+            const imgEl = document.querySelector(imgSelector);
+            if (!imgEl) return;
+
+            const oversampling = 4;
+            const fetchWidth = Math.max(100, Math.round(targetPx * oversampling));
+            const fetchHeight = Math.max(100, Math.round(targetPx * oversampling));
+            const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
+
+            const resp = await fetch(qrUrl, { credentials: 'same-origin' });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const blob = await resp.blob();
+            const objUrl = URL.createObjectURL(blob);
+
+            await new Promise((resolve, reject) => {
+                const tmpImg = new Image();
+                tmpImg.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetPx;
+                    canvas.height = targetPx;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.clearRect(0, 0, targetPx, targetPx);
+                    ctx.drawImage(tmpImg, 0, 0, targetPx, targetPx);
+                    const dataUrl = canvas.toDataURL('image/png');
+                    imgEl.src = dataUrl;
+                    imgEl.style.imageRendering = 'pixelated';
+                    URL.revokeObjectURL(objUrl);
+                    resolve();
+                };
+                tmpImg.onerror = reject;
+                tmpImg.src = objUrl;
+            });
+        } catch (e) {
+            console.warn('No se pudo actualizar la vista previa del QR sin borrosidad:', e);
+        }
+    }
+
+    /**
      * Fallback: redirigir al endpoint del servidor que ya funciona (/overlay)
      */
     redirectToServerOverlay() {
