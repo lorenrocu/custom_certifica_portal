@@ -82,13 +82,42 @@ class QROverlayManager {
    * Construcción del PNG (LOGO + QR) 1:1 con QWeb
    * =======================*/
   /**
-   * buildCompositePNG(qrText, qrSizeToken, logoSrc, layoutSpec)
+   * buildCompositePNG(qrText, qrSizeToken, logoSrc, layoutSpec, qualityOptions)
    * - Para 1.5cm usa:
    *   container: 118x233, logo: 56, spacing: 14, qrMarginX: 9, qrSizePx: 100, innerInset: 2
-   * - Oversample x4 y reducción por factor entero => nitidez perfecta
-   * - innerInset reduce el área “activa” del QR para igualar tamaño de patrones
+   * - Oversample dinámico (x8-x16) y reducción optimizada => nitidez máxima
+   * - innerInset reduce el área "activa" del QR para igualar tamaño de patrones
+   * - Canvas optimizado para renderizado de alta calidad
+   * - qualityOptions: { useSvg, oversampleFactor, resolutionFactor }
    */
-  async buildCompositePNG(qrText, _qrSizeToken, logoSrc, layoutSpec) {
+  async buildCompositePNG(qrText, _qrSizeToken, logoSrc, layoutSpec, qualityOptions = {}) {
+    // Configuración de calidad por defecto
+    const {
+      useSvg = true,
+      oversampleFactor = 'auto',
+      resolutionFactor = 4
+    } = qualityOptions;
+
+    // Intentar primero con SVG para máxima calidad si está habilitado
+    if (useSvg) {
+      try {
+        return await this.buildCompositePNGFromSVG(qrText, _qrSizeToken, logoSrc, layoutSpec, qualityOptions);
+      } catch (e) {
+        console.warn('SVG fallback failed, using PNG method:', e);
+      }
+    }
+    
+    return await this.buildCompositePNGFromPNG(qrText, _qrSizeToken, logoSrc, layoutSpec, qualityOptions);
+  }
+
+  /**
+   * buildCompositePNGFromSVG - Método preferido con calidad vectorial
+   */
+  async buildCompositePNGFromSVG(qrText, _qrSizeToken, logoSrc, layoutSpec, qualityOptions = {}) {
+    const {
+      resolutionFactor = 4
+    } = qualityOptions;
+    
     const useCustom = !!layoutSpec;
 
     // Layout 1.5 cm EXACTO (coincide con tu QWeb)
@@ -99,36 +128,165 @@ class QROverlayManager {
     const qrMarginX       = useCustom ? (layoutSpec.qrMarginX       ?? 9)   : 9;
     const qrNominalPx     = useCustom ? (layoutSpec.qrSizePx        ?? 100) : 100;
 
-    // Quiet zone interno para igualar “finder patterns” del QWeb
+    // Quiet zone interno para igualar "finder patterns" del QWeb
+    const innerInset = useCustom && typeof layoutSpec.innerInset === 'number' ? layoutSpec.innerInset : 2;
+    const qrDrawSize = qrNominalPx - innerInset * 2;
+
+    // 1) Obtener SVG del QR desde backend (calidad vectorial perfecta)
+    const qrSvgUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${qrDrawSize}&height=${qrDrawSize}&format=svg`;
+    const svgResponse = await fetch(qrSvgUrl);
+    if (!svgResponse.ok) throw new Error('SVG QR not available');
+    
+    const svgText = await svgResponse.text();
+    
+    // 2) Crear canvas con alta resolución para renderizar SVG (factor configurable)
+    const highRes = resolutionFactor;
+    const canvas = document.createElement('canvas');
+    canvas.width = containerWidth * highRes;
+    canvas.height = containerHeight * highRes;
+    const ctx = canvas.getContext('2d', {
+      alpha: false,
+      desynchronized: false,
+      colorSpace: 'srgb',
+      willReadFrequently: false
+    });
+    
+    // Configuración para máxima calidad
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.scale(highRes, highRes);
+    
+    // Fondo blanco sólido
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, containerWidth, containerHeight);
+
+    // 3) Renderizar logo si existe
+    if (logoSrc && logoHeight > 0) {
+      try {
+        const logoImg = await this.loadImage(logoSrc);
+        ctx.drawImage(logoImg, 0, 0, containerWidth, logoHeight);
+      } catch (e) {
+        console.warn('Logo no disponible para componer:', e);
+      }
+    }
+
+    // 4) Renderizar SVG del QR
+    const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const svgImg = await this.loadImage(svgUrl);
+    
+    const qrX = qrMarginX + innerInset;
+    const qrY = (logoHeight ? logoHeight + spacing : 0) + innerInset;
+    ctx.drawImage(svgImg, qrX, qrY, qrDrawSize, qrDrawSize);
+    
+    URL.revokeObjectURL(svgUrl);
+
+    // 5) Reducir a resolución final manteniendo la calidad
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = containerWidth;
+    finalCanvas.height = containerHeight;
+    const finalCtx = finalCanvas.getContext('2d', {
+      alpha: false,
+      desynchronized: false,
+      colorSpace: 'srgb',
+      willReadFrequently: false
+    });
+    
+    finalCtx.imageSmoothingEnabled = true;
+    finalCtx.imageSmoothingQuality = 'high';
+    finalCtx.drawImage(canvas, 0, 0, containerWidth, containerHeight);
+
+    const dataUrl = finalCanvas.toDataURL('image/png');
+    return this.dataURLToUint8Array(dataUrl);
+  }
+
+  /**
+   * buildCompositePNGFromPNG - Método fallback mejorado
+   */
+  async buildCompositePNGFromPNG(qrText, _qrSizeToken, logoSrc, layoutSpec, qualityOptions = {}) {
+    const {
+      oversampleFactor = 'auto'
+    } = qualityOptions;
+    
+    const useCustom = !!layoutSpec;
+
+    // Layout 1.5 cm EXACTO (coincide con tu QWeb)
+    const containerWidth  = useCustom ? (layoutSpec.containerWidth  ?? 118) : 118;
+    const containerHeight = useCustom ? (layoutSpec.containerHeight ?? 233) : 233;
+    const logoHeight      = useCustom ? (layoutSpec.logoHeight      ?? 56)  : 56;
+    const spacing         = useCustom ? (layoutSpec.spacing         ?? 14)  : 14;
+    const qrMarginX       = useCustom ? (layoutSpec.qrMarginX       ?? 9)   : 9;
+    const qrNominalPx     = useCustom ? (layoutSpec.qrSizePx        ?? 100) : 100;
+
+    // Quiet zone interno para igualar "finder patterns" del QWeb
     const innerInset = useCustom && typeof layoutSpec.innerInset === 'number' ? layoutSpec.innerInset : 2;
     const qrDrawSize = qrNominalPx - innerInset * 2; // p.ej., 96 si inset=2
 
-    // Oversampling entero (x4) => se pide grande y se reduce sin suavizado
-    const oversample = 4;
-    const fetchW = Math.max(100, qrDrawSize * oversample);
+    // Oversampling: automático o manual según configuración del usuario
+    let oversample;
+    if (oversampleFactor === 'auto') {
+      // Oversampling dinámico: más agresivo para QRs pequeños
+      if (qrDrawSize <= 100) {
+        oversample = 16; // Máxima calidad para QRs pequeños (1.5cm)
+      } else if (qrDrawSize <= 200) {
+        oversample = 12; // Alta calidad para QRs medianos (3.5cm)
+      } else if (qrDrawSize <= 400) {
+        oversample = 8;  // Buena calidad para QRs grandes (5cm)
+      } else {
+        oversample = 6;  // Calidad optimizada para QRs muy grandes (9.5cm)
+      }
+    } else {
+      // Usar factor manual especificado por el usuario
+      oversample = parseInt(oversampleFactor) || 8;
+    }
+    
+    const fetchW = Math.max(200, qrDrawSize * oversample);
     const fetchH = fetchW;
 
-    // 1) Obtener PNG del QR desde backend
+    // 1) Obtener PNG del QR desde backend con máxima resolución
     const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchW}&height=${fetchH}`;
     const qrBigImg = await this.loadImage(qrUrl);
 
-    // 2) Reducir al tamaño final (sin suavizado, factor entero)
+    // 2) Crear canvas intermedio con configuración optimizada para alta calidad
     const qrCanvas = document.createElement('canvas');
     qrCanvas.width = qrDrawSize;
     qrCanvas.height = qrDrawSize;
-    const qctx = qrCanvas.getContext('2d');
+    const qctx = qrCanvas.getContext('2d', {
+      alpha: false,           // Sin canal alpha para mejor rendimiento
+      desynchronized: false,  // Sincronizado para mejor calidad
+      colorSpace: 'srgb',     // Espacio de color estándar
+      willReadFrequently: false // Optimizado para escritura
+    });
+    
+    // Configuración avanzada del contexto para máxima calidad
     qctx.imageSmoothingEnabled = false;
-    qctx.clearRect(0, 0, qrDrawSize, qrDrawSize);
+    qctx.imageSmoothingQuality = 'high';
+    qctx.textRenderingOptimization = 'optimizeQuality';
+    
+    // Fondo blanco sólido para evitar artefactos
+    qctx.fillStyle = '#FFFFFF';
+    qctx.fillRect(0, 0, qrDrawSize, qrDrawSize);
+    
+    // Reducir con algoritmo optimizado (nearest neighbor para preservar bordes nítidos)
     qctx.drawImage(qrBigImg, 0, 0, qrDrawSize, qrDrawSize);
 
-    // 3) Componer LOGO + QR en un único PNG
+    // 3) Componer LOGO + QR en un único PNG con máxima calidad
     const canvas = document.createElement('canvas');
     canvas.width = containerWidth;
     canvas.height = containerHeight;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', {
+      alpha: false,           // Sin canal alpha para mejor rendimiento
+      desynchronized: false,  // Sincronizado para mejor calidad
+      colorSpace: 'srgb',     // Espacio de color estándar
+      willReadFrequently: false // Optimizado para escritura
+    });
+    
+    // Configuración avanzada para composición de alta calidad
     ctx.imageSmoothingEnabled = false;
-
-    // Fondo BLANCO como en QWeb
+    ctx.imageSmoothingQuality = 'high';
+    ctx.textRenderingOptimization = 'optimizeQuality';
+    
+    // Fondo BLANCO sólido como en QWeb (sin transparencias)
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, containerWidth, containerHeight);
 
@@ -152,30 +310,41 @@ class QROverlayManager {
   }
 
   /* =========================
-   * Vista previa (usa el MISMO pipeline que el PDF)
+   * Vista previa optimizada (usa el MISMO pipeline que el PDF)
    * =======================*/
-  async updateQRPreview(imgSelector, qrText, _sizeToken, logoSrc = null, layoutSpec = null) {
+  async updateQRPreview(imgSelector, qrText, _sizeToken, logoSrc = null, layoutSpec = null, qualityOptions = {}) {
     const imgEl = document.querySelector(imgSelector);
     if (!imgEl) return;
 
     try {
-      const pngBytes = await this.buildCompositePNG(qrText, _sizeToken, logoSrc, layoutSpec);
+      const pngBytes = await this.buildCompositePNG(qrText, _sizeToken, logoSrc, layoutSpec, qualityOptions);
       const blob = new Blob([pngBytes], { type: 'image/png' });
       const url = URL.createObjectURL(blob);
+      
+      // Configurar imagen para máxima nitidez
       imgEl.src = url;
       imgEl.style.imageRendering = 'pixelated';
+      imgEl.style.imageRendering = 'crisp-edges';
+      imgEl.style.imageRendering = '-moz-crisp-edges';
+      imgEl.style.imageRendering = '-webkit-optimize-contrast';
+      
+      // Limpiar URL anterior para evitar memory leaks
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
     } catch (e) {
       console.warn('Preview fallback:', e);
-      // Fallback mínimo (solo QR)
-      imgEl.src = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=100&height=100`;
+      // Fallback mejorado con configuración de alta calidad
+      const fallbackUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=400&height=400`;
+      imgEl.src = fallbackUrl;
       imgEl.style.imageRendering = 'pixelated';
+      imgEl.style.imageRendering = 'crisp-edges';
     }
   }
 
   /* =========================
    * Generación PDF (overlay JS real) + Fallback servidor
    * =======================*/
-  async generateQROverlay(pdfUrl, qrText, qrSizeToken, filename = 'certificado-qr.pdf', logoSrc = null, layoutSpec = null) {
+  async generateQROverlay(pdfUrl, qrText, qrSizeToken, filename = 'certificado-qr.pdf', logoSrc = null, layoutSpec = null, qualityOptions = {}) {
     try {
       if (!(this.useRealLibraries && this.PDFLib && this.PDFLib.PDFDocument)) {
         this.redirectToServerOverlay();
@@ -186,8 +355,8 @@ class QROverlayManager {
       const pdfBytes = await this.downloadPDF(pdfUrl);
       const pdfDoc = await this.PDFLib.PDFDocument.load(pdfBytes);
 
-      // 2) Construir PNG compuesto idéntico al de QWeb
-      const compositePNG = await this.buildCompositePNG(qrText, qrSizeToken, logoSrc, layoutSpec);
+      // 2) Construir PNG compuesto idéntico al de QWeb con opciones de calidad
+      const compositePNG = await this.buildCompositePNG(qrText, qrSizeToken, logoSrc, layoutSpec, qualityOptions);
       const pdfImage = await pdfDoc.embedPng(compositePNG);
 
       // 3) Posicionar en primera página (esquina sup. derecha)

@@ -748,7 +748,7 @@ class ProductPlannerPortal(CustomerPortal):
         .muted { color: var(--muted); font-size: 13px; }
         .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
         .logo-img { max-height: 30px; margin-bottom: 6px; object-fit: contain; }
-        .qr-img { width: %spx; height: %s; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid var(--border); background: #fff; }
+        .qr-img { width: %spx; height: %s; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; border: 1px solid var(--border); background: #fff; }
         .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
         .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; }
         .btn.secondary { background:#111827; }
@@ -770,6 +770,37 @@ class ProductPlannerPortal(CustomerPortal):
                 <div class="qr-box">
                     <img class="qr-img" src="%s" alt="QR de verificación" />
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
+                    
+                    <!-- Controles de calidad avanzados -->
+                    <div style="margin: 12px 0; padding: 12px; background: #f8f9fa; border-radius: 8px; width: 100%%; box-sizing: border-box;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #374151;">Configuración de Calidad</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                                <input type="checkbox" id="use-svg-qr" checked style="margin: 0;">
+                                <span>Usar SVG (máxima calidad vectorial)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                                <span style="min-width: 80px;">Oversampling:</span>
+                                <select id="oversample-factor" style="flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <option value="auto" selected>Automático</option>
+                                    <option value="4">4x (Rápido)</option>
+                                    <option value="8">8x (Bueno)</option>
+                                    <option value="12">12x (Alto)</option>
+                                    <option value="16">16x (Máximo)</option>
+                                </select>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                                <span style="min-width: 80px;">Resolución:</span>
+                                <select id="resolution-factor" style="flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <option value="2">2x (Estándar)</option>
+                                    <option value="4" selected>4x (Alta)</option>
+                                    <option value="6">6x (Muy Alta)</option>
+                                    <option value="8">8x (Ultra)</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                    
                     <div class="actions">
                         <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
                         <button class="btn" id="btn-js">Descargar PDF con QR (JavaScript)</button>
@@ -800,18 +831,60 @@ class ProductPlannerPortal(CustomerPortal):
         document.getElementById('btn-js').addEventListener('click', async () => {
             try {
                 if (!window.qrOverlayManager) throw new Error('qrOverlayManager no inicializado');
-                await window.qrOverlayManager.generateQROverlay(config.pdfUrl, config.qrText, config.qrSize, config.filename, config.logoSrc, layoutSpec);
+                
+                // Obtener configuración de calidad del usuario
+                const useSvg = document.getElementById('use-svg-qr').checked;
+                const oversampleFactor = document.getElementById('oversample-factor').value;
+                const resolutionFactor = parseInt(document.getElementById('resolution-factor').value);
+                
+                // Configurar opciones de calidad
+                const qualityOptions = {
+                    useSvg: useSvg,
+                    oversampleFactor: oversampleFactor,
+                    resolutionFactor: resolutionFactor
+                };
+                
+                await window.qrOverlayManager.generateQROverlay(
+                    config.pdfUrl, 
+                    config.qrText, 
+                    config.qrSize, 
+                    config.filename, 
+                    config.logoSrc, 
+                    layoutSpec,
+                    qualityOptions
+                );
             } catch (e) {
                 alert('Error generando por JavaScript: ' + e.message);
             }
         });
+        
         // Actualizar vista previa del QR en la tarjeta para evitar borrosidad
-        try {
-            const targetPx = layoutSpec ? layoutSpec.containerWidth : window.qrOverlayManager.convertSizeToPixels(config.qrSize);
-            window.qrOverlayManager.updateQRPreview('.qr-img', config.qrText, targetPx, config.logoSrc, layoutSpec);
-        } catch (e) {
-            console.warn('No se pudo actualizar la vista previa del QR:', e);
-        }
+        const updatePreview = () => {
+            try {
+                const useSvg = document.getElementById('use-svg-qr').checked;
+                const oversampleFactor = document.getElementById('oversample-factor').value;
+                const resolutionFactor = parseInt(document.getElementById('resolution-factor').value);
+                
+                const qualityOptions = {
+                    useSvg: useSvg,
+                    oversampleFactor: oversampleFactor,
+                    resolutionFactor: resolutionFactor
+                };
+                
+                const targetPx = layoutSpec ? layoutSpec.containerWidth : window.qrOverlayManager.convertSizeToPixels(config.qrSize);
+                window.qrOverlayManager.updateQRPreview('.qr-img', config.qrText, targetPx, config.logoSrc, layoutSpec, qualityOptions);
+            } catch (e) {
+                console.warn('No se pudo actualizar la vista previa del QR:', e);
+            }
+        };
+        
+        // Actualizar vista previa inicial
+        updatePreview();
+        
+        // Actualizar vista previa cuando cambien los controles
+        document.getElementById('use-svg-qr').addEventListener('change', updatePreview);
+        document.getElementById('oversample-factor').addEventListener('change', updatePreview);
+        document.getElementById('resolution-factor').addEventListener('change', updatePreview);
         </script>
 </body>
 </html>
