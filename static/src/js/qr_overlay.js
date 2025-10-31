@@ -403,56 +403,9 @@ class QROverlayManager {
                 tmpImg.src = objUrl;
             });
         } catch (e) {
-            console.warn('No se pudo actualizar la vista previa del QR sin borrosidad, aplicando fallback Canvas:', e);
-            try {
-                // Fallback: generar QR con nuestro Canvas simple y componer
-                const imgEl = document.querySelector(imgSelector);
-                if (!imgEl) return;
-                const useCustomLayout = !!layoutSpec;
-                const containerWidth = useCustomLayout ? (layoutSpec.containerWidth || targetPx) : targetPx;
-                const qrInnerPx = useCustomLayout ? (layoutSpec.qrSizePx || targetPx) : targetPx;
-                const spacing = useCustomLayout ? (layoutSpec.spacing || 0) : 6;
-                const logoHeight = useCustomLayout ? (layoutSpec.logoHeight || 0) : Math.round(targetPx * 0.48);
-
-                const qrCanvas = await this.generateQRWithCanvas(qrText, qrInnerPx);
-                const canvas = document.createElement('canvas');
-                const compositeHeight = useCustomLayout ? (layoutSpec.containerHeight || (qrInnerPx + (logoHeight ? (logoHeight + spacing) : 0)))
-                                                         : (targetPx + (logoHeight ? (logoHeight + spacing) : 0));
-                canvas.width = containerWidth;
-                canvas.height = compositeHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.imageSmoothingEnabled = false;
-                ctx.clearRect(0, 0, containerWidth, compositeHeight);
-
-                // Dibujar logo si disponible
-                if (logoSrc && logoHeight) {
-                    const logoImg = new Image();
-                    await new Promise((resolve) => {
-                        logoImg.onload = resolve;
-                        logoImg.onerror = resolve; // continuar aun si falla
-                        logoImg.src = logoSrc;
-                    });
-                    if (useCustomLayout) {
-                        ctx.drawImage(logoImg, 0, 0, containerWidth, logoHeight);
-                    } else {
-                        const scale = logoHeight / logoImg.naturalHeight;
-                        const logoWidthDraw = Math.round(logoImg.naturalWidth * scale);
-                        const logoX = Math.max(0, Math.round((containerWidth - logoWidthDraw) / 2));
-                        ctx.drawImage(logoImg, logoX, 0, logoWidthDraw, logoHeight);
-                    }
-                }
-
-                // Dibujar QR
-                const qrY = logoHeight ? (logoHeight + spacing) : 0;
-                const qrX = useCustomLayout ? (layoutSpec.qrMarginX || 0) : 0;
-                ctx.drawImage(qrCanvas, qrX, qrY, qrInnerPx, qrInnerPx);
-
-                const dataUrl = canvas.toDataURL('image/png');
-                imgEl.src = dataUrl;
-                imgEl.style.imageRendering = 'pixelated';
-            } catch (err) {
-                console.warn('Fallback Canvas también falló:', err);
-            }
+            console.warn('No se pudo actualizar la vista previa del QR sin borrosidad. Se mantendrá la imagen original del backend. Error:', e);
+            // Nota: Evitamos fallback Canvas para mantener consistencia visual con el QR original del backend.
+            // Si fuese necesario, podemos habilitar un flag para usar fallback explícitamente.
         }
     }
 

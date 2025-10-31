@@ -683,12 +683,14 @@ class ProductPlannerPortal(CustomerPortal):
         qr_inner_height = 100
 
         if strurl == 'print_qr15':
-            # Especificación solicitada por el usuario
+            # Especificación del layout solicitada por el usuario.
+            # Para mantener el patrón del QR idéntico al original, usamos 100px (igual que el mapeo calibrado previo)
+            # y ajustamos el margen lateral a 9px por lado dentro del contenedor 118px.
             qr_css_width = 118
             qr_css_height = '233px'
-            qr_inner_width = 98
-            qr_inner_height = 98
-            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":98,"spacing":14,"qrMarginX":10}'
+            qr_inner_width = 100
+            qr_inner_height = 100
+            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":100,"spacing":14,"qrMarginX":9}'
         elif strurl == 'print_qr35':
             qr_css_width = 234
             qr_inner_width = 234
