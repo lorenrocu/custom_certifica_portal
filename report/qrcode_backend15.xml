@@ -3,9 +3,17 @@
     <data>
         <template id="print2_qr15_backend">
             <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
+            <t t-set="idreg" t-value="(doc.xtipodocumento.code == 'personas') and (doc.personas_id.id or 0) or (doc.xmaquinaria.id or 0)" />
+            <t t-set="uid" t-value="doc.cliente_id.id or env.user.id" />
+            <t t-set="urlbase" t-value="request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])" />
+            <t t-set="base_url" t-value="str(urlbase.value) if urlbase else 'https://tienda.certificalatam.com'" />
+            <t t-set="xurldownload" t-value="'/web/ultimocertificado/%s/%s/%s' % (ruta_url, idreg, uid)" />
+            <t t-set="w" t-value="100" />
+            <t t-set="h" t-value="100" />
             <div class="page" style="position:absolute; top:-40; left:0; ">
                 <div style="display: inherit;margin:auto;text-align: center;">
-                    <img t-att-src="'data:image/png;base64,%s' %  to_text(doc.qr_code15)" />
+                    <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', xurldownload, h, w)"/>
                 </div>
 
             </div>
