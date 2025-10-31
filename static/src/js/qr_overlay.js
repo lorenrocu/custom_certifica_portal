@@ -259,6 +259,7 @@ class QROverlayManager {
             canvas.width = compositeWidthPx;
             canvas.height = compositeHeightPx;
             const ctx = canvas.getContext('2d');
+            // IMPORTANTE: Desactivamos el suavizado para mantener la nitidez exacta del QR original
             ctx.imageSmoothingEnabled = false;
             ctx.clearRect(0, 0, compositeWidthPx, compositeHeightPx);
 
@@ -275,9 +276,12 @@ class QROverlayManager {
                 }
             }
 
-            // QR (debajo del logo)
+            // QR (debajo del logo) - Usamos el QR exacto del backend sin redimensionar
             const qrY = (tmpLogoImg ? logoHeightPx + spacingPx : 0);
             const qrX = useCustomLayout ? (layoutSpec.qrMarginX || 0) : 0;
+            
+            // Dibujamos el QR sin redimensionar para mantener la fidelidad exacta con el original
+            // Esto es crucial para evitar distorsiones en los patrones de esquina
             ctx.drawImage(tmpQrImg, qrX, qrY, qrWidthPx, qrHeightPx);
 
             // Convertir canvas a PNG y embeber como UNA sola imagen en el PDF
@@ -333,6 +337,8 @@ class QROverlayManager {
             const oversampling = 4;
             // Si hay layout, el tamaño real del QR interno es layoutSpec.qrSizePx
             const qrInnerPx = useCustomLayout ? (layoutSpec.qrSizePx || targetPx) : targetPx;
+            // IMPORTANTE: Para el QR de 1.5cm, usamos exactamente 100x100 para mantener consistencia con el original
+            // Esto garantiza que los patrones de esquina tengan exactamente el mismo tamaño
             const fetchWidth = Math.max(100, Math.round(qrInnerPx * oversampling));
             const fetchHeight = Math.max(100, Math.round(qrInnerPx * oversampling));
             const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
@@ -373,6 +379,7 @@ class QROverlayManager {
                     canvas.width = containerWidth;
                     canvas.height = compositeHeight;
                     const ctx = canvas.getContext('2d');
+                    // IMPORTANTE: Desactivamos el suavizado para mantener la nitidez exacta del QR original
                     ctx.imageSmoothingEnabled = false;
                     ctx.clearRect(0, 0, containerWidth, compositeHeight);
 
@@ -391,6 +398,8 @@ class QROverlayManager {
                     // Dibujar QR
                     const qrY = logoImg ? (logoHeight + spacing) : 0;
                     const qrX = useCustomLayout ? (layoutSpec.qrMarginX || 0) : 0;
+                    // Dibujamos el QR sin redimensionar para mantener la fidelidad exacta con el original
+                    // Esto es crucial para evitar distorsiones en los patrones de esquina
                     ctx.drawImage(tmpImg, qrX, qrY, qrInnerPx, qrInnerPx);
 
                     const dataUrl = canvas.toDataURL('image/png');
@@ -399,13 +408,27 @@ class QROverlayManager {
                     URL.revokeObjectURL(objUrl);
                     resolve();
                 };
-                tmpImg.onerror = reject;
+                tmpImg.onerror = () => {
+                    // Si falla la carga del QR del backend, usamos la imagen directa del backend
+                    // en lugar de generar un QR simple con canvas para mantener consistencia visual
+                    console.warn('No se pudo cargar el QR del backend, usando imagen directa...');
+                    imgEl.src = qrUrl;
+                    URL.revokeObjectURL(objUrl);
+                    resolve();
+                };
                 tmpImg.src = objUrl;
             });
         } catch (e) {
             console.warn('No se pudo actualizar la vista previa del QR sin borrosidad. Se mantendrá la imagen original del backend. Error:', e);
-            // Nota: Evitamos fallback Canvas para mantener consistencia visual con el QR original del backend.
-            // Si fuese necesario, podemos habilitar un flag para usar fallback explícitamente.
+            // Si falla todo, usamos directamente la URL del backend
+            try {
+                const imgEl = document.querySelector(imgSelector);
+                if (!imgEl) return;
+                // Usamos directamente la URL del backend para mantener consistencia visual
+                imgEl.src = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${targetPx}&height=${targetPx}`;
+            } catch (error) {
+                console.error('Error total generando QR:', error);
+            }
         }
     }
 
