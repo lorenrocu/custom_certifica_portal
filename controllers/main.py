@@ -673,18 +673,34 @@ class ProductPlannerPortal(CustomerPortal):
         }
         qr_size = qr_size_map.get(strurl, '1.5cm')
 
-        # Dimensiones del QR (px) – mapeo calibrado para igualar lo que "ya se tenía"
-        qr_width = 100
-        qr_height = 100
-        if strurl == 'print_qr35':
-            qr_width = 234
-            qr_height = 234
+        # Dimensiones y layout:
+        # Para 1.5cm, requerimiento específico: contenedor 118x233, logo 118x56, QR 98x98, margen entre logo y QR 14px, margen lateral QR 10px.
+        # Para los otros tamaños, se mantiene el mapeo calibrado anterior.
+        qr_css_width = 100  # ancho del contenedor/imagen para la vista
+        qr_css_height = 'auto'  # altura CSS (auto por defecto)
+        layout_json = 'null'  # layout especial (JSON) solo para 1.5cm
+        qr_inner_width = 100  # tamaño del QR interno para la URL de backend
+        qr_inner_height = 100
+
+        if strurl == 'print_qr15':
+            # Especificación solicitada por el usuario
+            qr_css_width = 118
+            qr_css_height = '233px'
+            qr_inner_width = 98
+            qr_inner_height = 98
+            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":98,"spacing":14,"qrMarginX":10}'
+        elif strurl == 'print_qr35':
+            qr_css_width = 234
+            qr_inner_width = 234
+            qr_inner_height = 234
         elif strurl == 'print_qr50':
-            qr_width = 333
-            qr_height = 333
+            qr_css_width = 333
+            qr_inner_width = 333
+            qr_inner_height = 333
         elif strurl == 'print_qr95':
-            qr_width = 587
-            qr_height = 587
+            qr_css_width = 587
+            qr_inner_width = 587
+            qr_inner_height = 587
 
         # Nombre del archivo
         if slide_slide_obj.file_name_certificado:
@@ -694,7 +710,7 @@ class ProductPlannerPortal(CustomerPortal):
 
         # Construir URLs auxiliares
         import urllib.parse
-        qr_url = base_url + '/report/barcode/?type=QR&value=' + urllib.parse.quote(xurldownload) + '&width=' + str(qr_width) + '&height=' + str(qr_height)
+        qr_url = base_url + '/report/barcode/?type=QR&value=' + urllib.parse.quote(xurldownload) + '&width=' + str(qr_inner_width) + '&height=' + str(qr_inner_height)
         overlay_url = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid) + '/' + str(strurl) + '/overlay'
 
         # Preparar logo en base64 para mostrar sobre el QR (igual que QWeb)
@@ -730,7 +746,7 @@ class ProductPlannerPortal(CustomerPortal):
         .muted { color: var(--muted); font-size: 13px; }
         .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
         .logo-img { max-height: 30px; margin-bottom: 6px; object-fit: contain; }
-        .qr-img { width: %spx; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid var(--border); background: #fff; }
+        .qr-img { width: %spx; height: %s; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid var(--border); background: #fff; }
         .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
         .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; }
         .btn.secondary { background:#111827; }
@@ -778,25 +794,26 @@ class ProductPlannerPortal(CustomerPortal):
             filename: '%s',
             logoSrc: '%s'
         };
+        const layoutSpec = %s; // null para tamaños normales, objeto para 1.5cm
         document.getElementById('btn-js').addEventListener('click', async () => {
             try {
                 if (!window.qrOverlayManager) throw new Error('qrOverlayManager no inicializado');
-                await window.qrOverlayManager.generateQROverlay(config.pdfUrl, config.qrText, config.qrSize, config.filename, config.logoSrc);
+                await window.qrOverlayManager.generateQROverlay(config.pdfUrl, config.qrText, config.qrSize, config.filename, config.logoSrc, layoutSpec);
             } catch (e) {
                 alert('Error generando por JavaScript: ' + e.message);
             }
         });
         // Actualizar vista previa del QR en la tarjeta para evitar borrosidad
         try {
-            const targetPx = window.qrOverlayManager.convertSizeToPixels(config.qrSize);
-            window.qrOverlayManager.updateQRPreview('.qr-img', config.qrText, targetPx, config.logoSrc);
+            const targetPx = layoutSpec ? layoutSpec.containerWidth : window.qrOverlayManager.convertSizeToPixels(config.qrSize);
+            window.qrOverlayManager.updateQRPreview('.qr-img', config.qrText, targetPx, config.logoSrc, layoutSpec);
         } catch (e) {
             console.warn('No se pudo actualizar la vista previa del QR:', e);
         }
         </script>
 </body>
 </html>
-        """ % (qr_width, qr_size, qr_url, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename, logo_src)
+        """ % (qr_css_width, qr_css_height, qr_size, qr_url, xurldownload, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename, logo_src, layout_json)
 
         return werkzeug.wrappers.Response(
             html_content,
