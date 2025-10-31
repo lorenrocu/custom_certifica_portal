@@ -197,6 +197,9 @@
                         <a class="btn btn-info btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/overlay_js_card')" title="QR Card 1.5cm (Servicio Externo)" target="_blank" style="margin-top: 6px; font-size: 10px;">
                           <i class="fa fa-external-link"/> Card 1.5cm
                         </a>
+                        <a class="btn btn-info btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/')+str(certificado.id)+str('/overlay_js_card35')" title="QR Card 3.5cm (Servicio Externo)" target="_blank" style="margin-top: 4px; font-size: 10px;">
+                          <i class="fa fa-external-link"/> Card 3.5cm
+                        </a>
                       </div>
                     </td>
                     <td><span t-field="certificado.fecha_monitoreo"/></td>
