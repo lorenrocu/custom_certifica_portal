@@ -1046,8 +1046,8 @@ class ProductPlannerPortal(CustomerPortal):
 
         # Construir URLs auxiliares
         import urllib.parse
-        # URL del servicio externo para generar la imagen QR
-        external_qr_url = 'https://ctf-qr.onrender.com/card?qr=' + urllib.parse.quote(xurldownload)
+        # URL del servicio externo para generar la imagen QR con parámetro de tamaño
+        external_qr_url = 'https://ctf-qr.onrender.com/card?qr=' + urllib.parse.quote(xurldownload) + '&cm=1.5'
         overlay_url = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid) + '/' + str(strurl) + '/overlay'
 
         # Página HTML sin QWeb: diseño 2 columnas con QR externo y visor de certificado
