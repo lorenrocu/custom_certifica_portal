@@ -12,8 +12,10 @@
         </template>
 
         <template id="report_qrcode15_backend">
-            <t t-foreach="docs" t-as="doc">
-                <t t-call="custom_certifica_portal.print2_qr15_backend" />
+            <t t-call="custom_certifica_portal.minimal_pdf_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.print2_qr15_backend" />
+                </t>
             </t>
         </template>
 
