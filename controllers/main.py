@@ -690,7 +690,7 @@ class ProductPlannerPortal(CustomerPortal):
             qr_css_height = '233px'
             qr_inner_width = 100
             qr_inner_height = 100
-            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":100,"spacing":14,"qrMarginX":9}'
+            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":100,"spacing":14,"qrMarginX":9,"innerInset":2}'
         elif strurl == 'print_qr35':
             qr_css_width = 234
             qr_inner_width = 234
