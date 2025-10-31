@@ -10,6 +10,11 @@ import base64
 import logging
 import werkzeug
 import io
+import qrcode
+from qrcode.image.styledpil import StyledPilImage
+from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
+from PIL import Image, ImageDraw
+import tempfile
 
 _logger = getLogger(__name__)
 
@@ -690,9 +695,7 @@ class ProductPlannerPortal(CustomerPortal):
             qr_css_height = '233px'
             qr_inner_width = 100
             qr_inner_height = 100
-            # Endpoint que retorna el PNG exacto usado en el backend (si está disponible)
-            qr_exact_url = base_url + '/web/qrcode_exact/print_qr15/' + str(slide_slide_obj.id)
-            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":100,"spacing":14,"qrMarginX":9,"qrExactUrl":"' + qr_exact_url + '"}'
+            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":100,"spacing":14,"qrMarginX":9}'
         elif strurl == 'print_qr35':
             qr_css_width = 234
             qr_inner_width = 234
@@ -996,44 +999,6 @@ class ProductPlannerPortal(CustomerPortal):
         response.status_code = 400
         return response
 
-    @http.route('/web/qrcode_exact/<string:size>/<int:doc_id>', type='http', auth="user", website=True)
-    def qrcode_exact(self, size, doc_id, **kwargs):
-        """
-        Devuelve el PNG del QR EXACTO usado por los reportes backend, cuando esté disponible en el modelo.
-        Actualmente implementado para 1.5cm (campo qr_code15). Para otros tamaños, se puede extender.
-        """
-        try:
-            slide = request.env['informes.encuestas.merge'].sudo().browse(doc_id)
-            if not slide:
-                return self._return_error_response("Certificado no encontrado para QR exacto")
-
-            field_map = {
-                'print_qr15': 'qr_code15',
-                'print_qr35': 'qr_code35',
-                'print_qr50': 'qr_code50',
-                'print_qr95': 'qr_code95',
-            }
-            field_name = field_map.get(size)
-            if not field_name:
-                return self._return_error_response("Tamaño de QR no soportado para endpoint exacto")
-
-            b64 = getattr(slide, field_name, None)
-            if not b64:
-                # Si no hay PNG pre-generado, devolvemos error para evitar inconsistencias
-                return self._return_error_response("QR exacto no disponible en backend para este tamaño")
-
-            if isinstance(b64, bytes):
-                b64 = b64.decode('utf-8')
-
-            img_bytes = base64.b64decode(b64)
-            response = werkzeug.wrappers.Response(img_bytes)
-            response.headers = [('Content-Type', 'image/png')]
-            response.mimetype = 'image/png'
-            return response
-        except Exception as e:
-            _logger.error("qrcode_exact - Error: %s" % str(e))
-            return self._return_error_response("Error recuperando QR exacto: %s" % str(e))
-
     @http.route(['/my/<string:ruta_url>','/my/<string:ruta_url>/page/<int:page>'], type='http', auth="user", methods=['GET'], website=True)
     def preference(self,page=1, date_begin=None, date_end=None, sortby=None, filterby=None,search=None, search_in='all', **kwargs):
         values = self._prepare_portal_layout_values()
@@ -1333,3 +1298,82 @@ class WebsiteAccount(CustomerPortal):
         })
 
         return values
+
+    @http.route('/qr_barcode', type='http', auth="public", methods=['GET'])
+    def qr_barcode_endpoint(self, **kwargs):
+        """
+        Endpoint dedicado que replica exactamente la funcionalidad del /report/barcode de Odoo
+        para generar códigos QR con parámetros idénticos y garantizar consistencia visual absoluta.
+        
+        Parámetros:
+        - type: Tipo de código (solo 'QR' soportado)
+        - value: Texto/URL a codificar
+        - width: Ancho en píxeles
+        - height: Alto en píxeles
+        - error_correction: Nivel de corrección de errores (L, M, Q, H) - opcional, por defecto M
+        - border: Tamaño del borde en módulos - opcional, por defecto 4
+        """
+        try:
+            # Obtener parámetros
+            barcode_type = kwargs.get('type', 'QR')
+            value = kwargs.get('value', '')
+            width = int(kwargs.get('width', 100))
+            height = int(kwargs.get('height', 100))
+            error_correction = kwargs.get('error_correction', 'M')
+            border = int(kwargs.get('border', 4))
+            
+            if not value:
+                return request.make_response("Error: Valor requerido", status=400)
+            
+            if barcode_type != 'QR':
+                return request.make_response("Error: Solo se soporta tipo QR", status=400)
+            
+            # Mapear nivel de corrección de errores (igual que Odoo)
+            error_correction_map = {
+                'L': qrcode.constants.ERROR_CORRECT_L,
+                'M': qrcode.constants.ERROR_CORRECT_M,
+                'Q': qrcode.constants.ERROR_CORRECT_Q,
+                'H': qrcode.constants.ERROR_CORRECT_H
+            }
+            
+            error_correct = error_correction_map.get(error_correction, qrcode.constants.ERROR_CORRECT_M)
+            
+            # Crear QR con configuración idéntica a Odoo
+            qr = qrcode.QRCode(
+                version=1,  # Versión automática
+                error_correction=error_correct,
+                box_size=1,  # Tamaño base por módulo
+                border=border,
+            )
+            
+            qr.add_data(value)
+            qr.make(fit=True)
+            
+            # Generar imagen PIL
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # Redimensionar a las dimensiones exactas solicitadas
+            # Usar NEAREST para evitar suavizado y mantener píxeles nítidos
+            img = img.resize((width, height), Image.NEAREST)
+            
+            # Convertir a PNG en memoria
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format='PNG', optimize=False)
+            img_buffer.seek(0)
+            
+            # Retornar imagen PNG
+            response = request.make_response(
+                img_buffer.getvalue(),
+                headers=[
+                    ('Content-Type', 'image/png'),
+                    ('Cache-Control', 'public, max-age=3600'),
+                    ('Content-Length', len(img_buffer.getvalue()))
+                ]
+            )
+            
+            _logger.info("qr_barcode_endpoint - QR generado exitosamente: %dx%d, valor=%s" % (width, height, value[:50]))
+            return response
+            
+        except Exception as e:
+            _logger.error("qr_barcode_endpoint - Error generando QR: %s" % str(e))
+            return request.make_response("Error interno del servidor", status=500)
