@@ -313,31 +313,97 @@ class QROverlayManager {
    * Vista previa optimizada (usa el MISMO pipeline que el PDF)
    * =======================*/
   async updateQRPreview(imgSelector, qrText, _sizeToken, logoSrc = null, layoutSpec = null, qualityOptions = {}) {
-    const imgEl = document.querySelector(imgSelector);
-    if (!imgEl) return;
+    const element = document.querySelector(imgSelector);
+    if (!element) return;
 
     try {
       const pngBytes = await this.buildCompositePNG(qrText, _sizeToken, logoSrc, layoutSpec, qualityOptions);
-      const blob = new Blob([pngBytes], { type: 'image/png' });
-      const url = URL.createObjectURL(blob);
       
-      // Configurar imagen para máxima nitidez
-      imgEl.src = url;
-      imgEl.style.imageRendering = 'pixelated';
-      imgEl.style.imageRendering = 'crisp-edges';
-      imgEl.style.imageRendering = '-moz-crisp-edges';
-      imgEl.style.imageRendering = '-webkit-optimize-contrast';
-      
-      // Limpiar URL anterior para evitar memory leaks
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (element.tagName.toLowerCase() === 'canvas') {
+        // Si es un canvas, dibujar directamente
+        const blob = new Blob([pngBytes], { type: 'image/png' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        
+        img.onload = () => {
+          const ctx = element.getContext('2d', {
+            alpha: false,
+            desynchronized: false,
+            colorSpace: 'srgb',
+            willReadFrequently: false
+          });
+          
+          // Configurar contexto para máxima calidad y nitidez
+          ctx.imageSmoothingEnabled = false;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.textRenderingOptimization = 'optimizeQuality';
+          
+          // Asegurar fondo blanco sólido
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, element.width, element.height);
+          
+          // Dibujar imagen con máxima precisión
+          ctx.drawImage(img, 0, 0, element.width, element.height);
+          
+          // Limpiar URL para evitar memory leaks
+          URL.revokeObjectURL(url);
+        };
+        
+        img.src = url;
+        
+      } else {
+        // Si es una imagen, usar el método anterior
+        const blob = new Blob([pngBytes], { type: 'image/png' });
+        const url = URL.createObjectURL(blob);
+        
+        // Configurar imagen para máxima nitidez
+        element.src = url;
+        element.style.imageRendering = 'pixelated';
+        element.style.imageRendering = 'crisp-edges';
+        element.style.imageRendering = '-moz-crisp-edges';
+        element.style.imageRendering = '-webkit-optimize-contrast';
+        
+        // Limpiar URL anterior para evitar memory leaks
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
       
     } catch (e) {
       console.warn('Preview fallback:', e);
-      // Fallback mejorado con configuración de alta calidad
-      const fallbackUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=400&height=400`;
-      imgEl.src = fallbackUrl;
-      imgEl.style.imageRendering = 'pixelated';
-      imgEl.style.imageRendering = 'crisp-edges';
+      
+      if (element.tagName.toLowerCase() === 'canvas') {
+         // Fallback para canvas: crear imagen básica
+         const fallbackUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=400&height=400`;
+         const img = new Image();
+         
+         img.onload = () => {
+           const ctx = element.getContext('2d', {
+             alpha: false,
+             desynchronized: false,
+             colorSpace: 'srgb',
+             willReadFrequently: false
+           });
+           
+           ctx.imageSmoothingEnabled = false;
+           ctx.imageSmoothingQuality = 'high';
+           ctx.textRenderingOptimization = 'optimizeQuality';
+           
+           // Fondo blanco sólido
+           ctx.fillStyle = '#FFFFFF';
+           ctx.fillRect(0, 0, element.width, element.height);
+           
+           // Dibujar imagen fallback
+           ctx.drawImage(img, 0, 0, element.width, element.height);
+         };
+         
+         img.src = fallbackUrl;
+        
+      } else {
+        // Fallback mejorado para imagen
+        const fallbackUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=400&height=400`;
+        element.src = fallbackUrl;
+        element.style.imageRendering = 'pixelated';
+        element.style.imageRendering = 'crisp-edges';
+      }
     }
   }
 

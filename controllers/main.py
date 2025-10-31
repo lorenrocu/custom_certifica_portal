@@ -748,7 +748,30 @@ class ProductPlannerPortal(CustomerPortal):
         .muted { color: var(--muted); font-size: 13px; }
         .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
         .logo-img { max-height: 30px; margin-bottom: 6px; object-fit: contain; }
-        .qr-img { width: %spx; height: %s; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; border: 1px solid var(--border); background: #fff; }
+        .qr-img { 
+            width: %spx; 
+            height: %spx; 
+            image-rendering: pixelated; 
+            image-rendering: crisp-edges; 
+            image-rendering: -moz-crisp-edges; 
+            image-rendering: -webkit-optimize-contrast; 
+            border: 1px solid var(--border); 
+            background: #fff; 
+            display: block;
+            margin: 0 auto;
+            /* Optimizaciones específicas para canvas */
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            /* Evitar interpolación en navegadores */
+            -ms-interpolation-mode: nearest-neighbor;
+            /* Asegurar que no se difumine */
+            filter: none;
+            -webkit-filter: none;
+        }
         .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
         .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; }
         .btn.secondary { background:#111827; }
@@ -768,7 +791,9 @@ class ProductPlannerPortal(CustomerPortal):
             <div class="card">
                 <h3 class="title">Código QR</h3>
                 <div class="qr-box">
-                    <img class="qr-img" src="%s" alt="QR de verificación" />
+                    <canvas class="qr-img" width="400" height="400" alt="QR de verificación" 
+                            style="max-width: %spx; max-height: %spx;"
+                            data-qr-canvas="true"></canvas>
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
                     <!-- Controles de calidad avanzados -->
@@ -888,7 +913,7 @@ class ProductPlannerPortal(CustomerPortal):
         </script>
 </body>
 </html>
-        """ % (qr_css_width, qr_css_height, qr_size, qr_url, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename, logo_src, layout_json)
+        """ % (qr_css_width, qr_css_height, qr_css_width, qr_css_height, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename, logo_src, layout_json)
 
         return werkzeug.wrappers.Response(
             html_content,
