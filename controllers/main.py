@@ -690,7 +690,9 @@ class ProductPlannerPortal(CustomerPortal):
             qr_css_height = '233px'
             qr_inner_width = 100
             qr_inner_height = 100
-            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":100,"spacing":14,"qrMarginX":9}'
+            # Endpoint que retorna el PNG exacto usado en el backend (si está disponible)
+            qr_exact_url = base_url + '/web/qrcode_exact/print_qr15/' + str(slide_slide_obj.id)
+            layout_json = '{"containerWidth":118,"containerHeight":233,"logoHeight":56,"qrSizePx":100,"spacing":14,"qrMarginX":9,"qrExactUrl":"' + qr_exact_url + '"}'
         elif strurl == 'print_qr35':
             qr_css_width = 234
             qr_inner_width = 234
@@ -993,6 +995,44 @@ class ProductPlannerPortal(CustomerPortal):
         response.mimetype = 'text/html'
         response.status_code = 400
         return response
+
+    @http.route('/web/qrcode_exact/<string:size>/<int:doc_id>', type='http', auth="user", website=True)
+    def qrcode_exact(self, size, doc_id, **kwargs):
+        """
+        Devuelve el PNG del QR EXACTO usado por los reportes backend, cuando esté disponible en el modelo.
+        Actualmente implementado para 1.5cm (campo qr_code15). Para otros tamaños, se puede extender.
+        """
+        try:
+            slide = request.env['informes.encuestas.merge'].sudo().browse(doc_id)
+            if not slide:
+                return self._return_error_response("Certificado no encontrado para QR exacto")
+
+            field_map = {
+                'print_qr15': 'qr_code15',
+                'print_qr35': 'qr_code35',
+                'print_qr50': 'qr_code50',
+                'print_qr95': 'qr_code95',
+            }
+            field_name = field_map.get(size)
+            if not field_name:
+                return self._return_error_response("Tamaño de QR no soportado para endpoint exacto")
+
+            b64 = getattr(slide, field_name, None)
+            if not b64:
+                # Si no hay PNG pre-generado, devolvemos error para evitar inconsistencias
+                return self._return_error_response("QR exacto no disponible en backend para este tamaño")
+
+            if isinstance(b64, bytes):
+                b64 = b64.decode('utf-8')
+
+            img_bytes = base64.b64decode(b64)
+            response = werkzeug.wrappers.Response(img_bytes)
+            response.headers = [('Content-Type', 'image/png')]
+            response.mimetype = 'image/png'
+            return response
+        except Exception as e:
+            _logger.error("qrcode_exact - Error: %s" % str(e))
+            return self._return_error_response("Error recuperando QR exacto: %s" % str(e))
 
     @http.route(['/my/<string:ruta_url>','/my/<string:ruta_url>/page/<int:page>'], type='http', auth="user", methods=['GET'], website=True)
     def preference(self,page=1, date_begin=None, date_end=None, sortby=None, filterby=None,search=None, search_in='all', **kwargs):

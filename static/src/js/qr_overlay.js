@@ -212,11 +212,14 @@ class QROverlayManager {
             const useCustomLayout = !!layoutSpec;
             const qrWidthPx = useCustomLayout ? (layoutSpec.qrSizePx || this.convertSizeToPixels(qrSize)) : this.convertSizeToPixels(qrSize);
             const qrHeightPx = useCustomLayout ? (layoutSpec.qrSizePx || this.convertSizeToPixels(qrSize)) : this.convertSizeToPixels(qrSize);
-            // Para evitar borrosidad, pedimos el PNG del backend en mayor resolución
-            const oversampling = 4; // factor de sobre-muestreo para mejorar nitidez
+            // Para mantener el patrón EXACTO del backend, pedimos el PNG a tamaño final (sin oversampling)
+            const oversampling = 1;
             const fetchWidth = Math.max(100, Math.round(qrWidthPx * oversampling));
             const fetchHeight = Math.max(100, Math.round(qrHeightPx * oversampling));
-            const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
+            // Si se provee un endpoint exacto desde el backend, úsalo para asegurar coincidencia visual
+            const qrUrl = (layoutSpec && layoutSpec.qrExactUrl)
+                ? layoutSpec.qrExactUrl
+                : `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
             console.log('🖼️ Obteniendo QR desde:', qrUrl);
             const imgResp = await fetch(qrUrl, { credentials: 'same-origin' });
             if (!imgResp.ok) {
@@ -330,12 +333,15 @@ class QROverlayManager {
             if (!imgEl) return;
 
             const useCustomLayout = !!layoutSpec;
-            const oversampling = 4;
+            const oversampling = 1;
             // Si hay layout, el tamaño real del QR interno es layoutSpec.qrSizePx
             const qrInnerPx = useCustomLayout ? (layoutSpec.qrSizePx || targetPx) : targetPx;
             const fetchWidth = Math.max(100, Math.round(qrInnerPx * oversampling));
             const fetchHeight = Math.max(100, Math.round(qrInnerPx * oversampling));
-            const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
+            // Si se provee un endpoint exacto desde el backend, úsalo para la vista previa
+            const qrUrl = (layoutSpec && layoutSpec.qrExactUrl)
+                ? layoutSpec.qrExactUrl
+                : `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
 
             const resp = await fetch(qrUrl, { credentials: 'same-origin' });
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
