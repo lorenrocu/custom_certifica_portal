@@ -261,11 +261,6 @@
                       <i class="fa fa-external-link"/> Card 1.5 cm
                     </a>
                   </div>
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-info btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/overlay_js_card35')" title="Certificado con QR Card 3.5cm (Servicio Externo)" target="_blank">
-                      <i class="fa fa-external-link"/> Card 3.5 cm
-                    </a>
-                  </div>
                 </div>
 
 
