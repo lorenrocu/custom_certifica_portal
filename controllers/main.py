@@ -949,6 +949,202 @@ class ProductPlannerPortal(CustomerPortal):
         )
 
     @http.route([
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js_card_35',
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js_card_35'
+    ], type='http', auth="user", website=True)
+    def print_certificate_with_qr_overlay_js_card_35(self, **kwargs):
+        """
+        Endpoint para la solución JavaScript Card de overlay QR de 3.5cm.
+        Muestra una imagen QR desde el servicio externo https://ctf-qr.onrender.com/card?qr=
+        en lugar de generar el QR localmente.
+        """
+        strurlruta = kwargs.get('ruta_url')
+        strurl = kwargs.get('ruta_urlqr')
+        idcertificado = kwargs.get('idcertificado')
+        xid = kwargs.get('id')
+        xuserid = kwargs.get('userid')
+
+        _logger.info("print_certificate_with_qr_overlay_js_card_35 - Generando página JS Card 3.5cm para tipo: '%s'" % strurlruta)
+
+        # Validación de parámetros obligatorios
+        if not strurlruta:
+            return self._return_error_response("Parámetro ruta_url requerido")
+        if not xid or xid == 'False':
+            return self._return_error_response("ID de registro inválido")
+        if not xuserid or xuserid == 'False':
+            return self._return_error_response("ID de usuario inválido")
+
+        # Búsqueda dinámica del tipo de documento
+        tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
+        if not tiposdocumentos:
+            return self._return_error_response("Tipo de documento '%s' no encontrado" % strurlruta)
+
+        # Conversión segura
+        registro_id = int(xid) if xid and str(xid).isdigit() else False
+        cliente_id = int(xuserid) if xuserid and str(xuserid).isdigit() else False
+
+        # Búsqueda del certificado
+        if strurlruta_final == 'personas':
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('personas_id', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+        else:
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('xmaquinaria', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+
+        slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc', limit=1)
+
+        # Fallback con parent_id
+        if not slide_slide_obj and cliente_id:
+            try:
+                partner = request.env['res.partner'].sudo().browse(cliente_id)
+                if partner and partner.parent_id:
+                    domain_parent = [(d[0], d[1], d[2]) for d in domain]
+                    for i, d in enumerate(domain_parent):
+                        if d[0] == 'cliente_id':
+                            domain_parent[i] = ('cliente_id', '=', partner.parent_id.id)
+                    slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain_parent, order='fecha_vigencia desc', limit=1)
+            except Exception as e:
+                _logger.error("print_certificate_with_qr_overlay_js_card_35 - Error en fallback parent_id: %s" % str(e))
+
+        if not slide_slide_obj:
+            return self._return_error_response("Certificado no encontrado")
+
+        # PDF original
+        original_pdf = slide_slide_obj.x_certificado_publicado_file
+        if not original_pdf:
+            return self._return_error_response("El certificado no tiene archivo PDF asociado")
+
+        # Base URL
+        urlbase = request.env['ir.config_parameter'].sudo().search([('key', '=', 'web.base.url')])
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+
+        # URL de verificación para el QR
+        if strurlruta_final == 'personas':
+            xurldownload = base_url + '/web/certificado_current/download_pdf/' + str(idcertificado if idcertificado else slide_slide_obj.id)
+        else:
+            xurldownload = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid)
+
+        # URL del PDF original
+        pdf_url = base_url + '/web/content/informes.encuestas.merge/' + str(slide_slide_obj.id) + '/x_certificado_publicado_file'
+
+        # Para JS Card 3.5cm, configuramos las dimensiones apropiadas
+        qr_size = '3.5cm'
+        qr_css_width = 276  # Aproximadamente 3.5cm en píxeles (3.5 * 79 px/cm)
+        qr_css_height = '545px'  # Altura proporcional
+
+        # Nombre del archivo
+        if slide_slide_obj.file_name_certificado:
+            filename = slide_slide_obj.file_name_certificado.replace('.pdf', '-QR-JS-CARD-35.pdf')
+        else:
+            filename = (slide_slide_obj.codigocliente + '-QR-JS-CARD-35.pdf') if slide_slide_obj.codigocliente else 'CERTIFICADO_QR_JS_CARD_35.pdf'
+
+        # Construir URLs auxiliares
+        import urllib.parse
+        # URL del servicio externo para generar la imagen QR con parámetro de tamaño 3.5cm
+        external_qr_url = 'https://ctf-qr.onrender.com/card?qr=' + urllib.parse.quote(xurldownload) + '&cm=3.5'
+        overlay_url = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid) + '/' + str(strurl) + '/overlay'
+
+        # Página HTML sin QWeb: diseño 2 columnas con QR externo y visor de certificado
+        html_content = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Certificado + QR Card 3.5cm (Vista)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #f6f8fa; --card: #fff; --text: #1f2937; --muted: #6b7280; --primary: #2563eb; --border: #e5e7eb;
+        }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+        .wrapper { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .header { margin-bottom: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
+        @media (max-width: 992px) { .grid { grid-template-columns: 1fr; } }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.03); }
+        .title { font-size: 18px; margin: 0 0 12px 0; }
+        .muted { color: var(--muted); font-size: 13px; }
+        .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+        .qr-img { 
+            width: %spx; 
+            height: %s; 
+            border: 1px solid var(--border); 
+            background: #fff; 
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+        .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+        .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; text-decoration: none; display: inline-block; }
+        .btn.secondary { background:#111827; }
+        .btn.outline { background:#fff; color:#111827; border:1px solid var(--border); }
+        .pdf-viewer { width: 100%%; height: 75vh; border: 1px solid var(--border); border-radius: 8px; }
+        .info-box { margin: 12px 0; padding: 12px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; }
+        .info-box h4 { margin: 0 0 8px 0; font-size: 14px; color: #0c4a6e; }
+        .info-box p { margin: 0; font-size: 13px; color: #075985; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <h2 style="margin:0">Certificado + QR Card 3.5cm (Servicio Externo)</h2>
+            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado por servicio externo para pruebas.</p>
+        </div>
+
+        <div class="grid">
+            <!-- Columna izquierda: QR desde servicio externo -->
+            <div class="card">
+                <h3 class="title">Código QR Card 3.5cm</h3>
+                <div class="qr-box">
+                    <img class="qr-img" src="%s" alt="QR de verificación desde servicio externo" 
+                         style="max-width: %spx; max-height: %s;"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display: none; padding: 20px; text-align: center; border: 2px dashed #ccc; color: #666;">
+                        Error cargando imagen QR del servicio externo
+                    </div>
+                    <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
+                    
+                    <!-- Información del servicio externo -->
+                    <div class="info-box">
+                        <h4>Servicio Externo - 3.5cm</h4>
+                        <p><strong>URL:</strong> https://ctf-qr.onrender.com/card</p>
+                        <p><strong>Parámetro QR:</strong> %s</p>
+                        <p><strong>Tamaño:</strong> cm=3.5</p>
+                        <p>Esta es una versión de prueba que utiliza un servicio externo para generar la imagen QR de 3.5cm.</p>
+                    </div>
+                    
+                    <div class="actions">
+                        <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
+                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna derecha: visor del certificado normal -->
+            <div class="card">
+                <h3 class="title">Certificado</h3>
+                <object class="pdf-viewer" data="%s" type="application/pdf">
+                    <p>No se pudo incrustar el PDF en el navegador. <a href="%s" target="_blank">Descargar certificado</a></p>
+                </object>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, xurldownload, overlay_url, external_qr_url, pdf_url, pdf_url)
+
+        return werkzeug.wrappers.Response(
+            html_content,
+            headers={'Content-Type': 'text/html; charset=utf-8'}
+        )
+
+    @http.route([
         '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js_card',
         '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js_card'
     ], type='http', auth="user", website=True)
