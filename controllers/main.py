@@ -913,7 +913,7 @@ class ProductPlannerPortal(CustomerPortal):
         </script>
 </body>
 </html>
-        """ % (qr_css_width, qr_css_height, qr_css_width, qr_css_height, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename, logo_src, layout_json)
+        """ % (qr_css_width, qr_css_height, qr_size, qr_css_width, qr_css_height, xurldownload, overlay_url, pdf_url, pdf_url, pdf_url, xurldownload, qr_size, filename, logo_src, layout_json)
 
         return werkzeug.wrappers.Response(
             html_content,
