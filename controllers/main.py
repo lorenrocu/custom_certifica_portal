@@ -10,11 +10,6 @@ import base64
 import logging
 import werkzeug
 import io
-import qrcode
-from qrcode.image.styledpil import StyledPilImage
-from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
-from PIL import Image, ImageDraw
-import tempfile
 
 _logger = getLogger(__name__)
 
@@ -1298,82 +1293,3 @@ class WebsiteAccount(CustomerPortal):
         })
 
         return values
-
-    @http.route('/qr_barcode', type='http', auth="public", methods=['GET'])
-    def qr_barcode_endpoint(self, **kwargs):
-        """
-        Endpoint dedicado que replica exactamente la funcionalidad del /report/barcode de Odoo
-        para generar códigos QR con parámetros idénticos y garantizar consistencia visual absoluta.
-        
-        Parámetros:
-        - type: Tipo de código (solo 'QR' soportado)
-        - value: Texto/URL a codificar
-        - width: Ancho en píxeles
-        - height: Alto en píxeles
-        - error_correction: Nivel de corrección de errores (L, M, Q, H) - opcional, por defecto M
-        - border: Tamaño del borde en módulos - opcional, por defecto 4
-        """
-        try:
-            # Obtener parámetros
-            barcode_type = kwargs.get('type', 'QR')
-            value = kwargs.get('value', '')
-            width = int(kwargs.get('width', 100))
-            height = int(kwargs.get('height', 100))
-            error_correction = kwargs.get('error_correction', 'M')
-            border = int(kwargs.get('border', 4))
-            
-            if not value:
-                return request.make_response("Error: Valor requerido", status=400)
-            
-            if barcode_type != 'QR':
-                return request.make_response("Error: Solo se soporta tipo QR", status=400)
-            
-            # Mapear nivel de corrección de errores (igual que Odoo)
-            error_correction_map = {
-                'L': qrcode.constants.ERROR_CORRECT_L,
-                'M': qrcode.constants.ERROR_CORRECT_M,
-                'Q': qrcode.constants.ERROR_CORRECT_Q,
-                'H': qrcode.constants.ERROR_CORRECT_H
-            }
-            
-            error_correct = error_correction_map.get(error_correction, qrcode.constants.ERROR_CORRECT_M)
-            
-            # Crear QR con configuración idéntica a Odoo
-            qr = qrcode.QRCode(
-                version=1,  # Versión automática
-                error_correction=error_correct,
-                box_size=1,  # Tamaño base por módulo
-                border=border,
-            )
-            
-            qr.add_data(value)
-            qr.make(fit=True)
-            
-            # Generar imagen PIL
-            img = qr.make_image(fill_color="black", back_color="white")
-            
-            # Redimensionar a las dimensiones exactas solicitadas
-            # Usar NEAREST para evitar suavizado y mantener píxeles nítidos
-            img = img.resize((width, height), Image.NEAREST)
-            
-            # Convertir a PNG en memoria
-            img_buffer = io.BytesIO()
-            img.save(img_buffer, format='PNG', optimize=False)
-            img_buffer.seek(0)
-            
-            # Retornar imagen PNG
-            response = request.make_response(
-                img_buffer.getvalue(),
-                headers=[
-                    ('Content-Type', 'image/png'),
-                    ('Cache-Control', 'public, max-age=3600'),
-                    ('Content-Length', len(img_buffer.getvalue()))
-                ]
-            )
-            
-            _logger.info("qr_barcode_endpoint - QR generado exitosamente: %dx%d, valor=%s" % (width, height, value[:50]))
-            return response
-            
-        except Exception as e:
-            _logger.error("qr_barcode_endpoint - Error generando QR: %s" % str(e))
-            return request.make_response("Error interno del servidor", status=500)

@@ -207,19 +207,17 @@ class QROverlayManager {
             // Cargar PDF
             const pdfDoc = await this.PDFLib.PDFDocument.load(pdfBytes);
 
-            // Obtener imagen PNG del QR desde nuestro endpoint dedicado (garantiza consistencia visual)
+            // Obtener imagen PNG del QR desde el backend (misma técnica que el controlador Python)
             // Si viene un layout específico (por ejemplo para 1.5cm), usarlo
             const useCustomLayout = !!layoutSpec;
             const qrWidthPx = useCustomLayout ? (layoutSpec.qrSizePx || this.convertSizeToPixels(qrSize)) : this.convertSizeToPixels(qrSize);
             const qrHeightPx = useCustomLayout ? (layoutSpec.qrSizePx || this.convertSizeToPixels(qrSize)) : this.convertSizeToPixels(qrSize);
-            
             // Para evitar borrosidad, pedimos el PNG del backend en mayor resolución
-            // Usar nuestro endpoint dedicado /qr_barcode que replica exactamente la funcionalidad de Odoo
             const oversampling = 4; // factor de sobre-muestreo para mejorar nitidez
             const fetchWidth = Math.max(100, Math.round(qrWidthPx * oversampling));
             const fetchHeight = Math.max(100, Math.round(qrHeightPx * oversampling));
-            const qrUrl = `/qr_barcode?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}&error_correction=M&border=4`;
-            console.log('🖼️ Obteniendo QR desde endpoint dedicado:', qrUrl);
+            const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
+            console.log('🖼️ Obteniendo QR desde:', qrUrl);
             const imgResp = await fetch(qrUrl, { credentials: 'same-origin' });
             if (!imgResp.ok) {
                 throw new Error(`No se pudo obtener la imagen del QR (HTTP ${imgResp.status})`);
@@ -277,24 +275,10 @@ class QROverlayManager {
                 }
             }
 
-            // QR (debajo del logo) con escalado pixel-perfect
+            // QR (debajo del logo)
             const qrY = (tmpLogoImg ? logoHeightPx + spacingPx : 0);
             const qrX = useCustomLayout ? (layoutSpec.qrMarginX || 0) : 0;
-            
-            // Asegurar escalado pixel-perfect sin interpolación
-            ctx.imageSmoothingEnabled = false;
-            ctx.webkitImageSmoothingEnabled = false;
-            ctx.mozImageSmoothingEnabled = false;
-            ctx.msImageSmoothingEnabled = false;
-            
-            // Escalado exacto del QR manteniendo la definición de píxeles
-            if (tmpQrImg.naturalWidth !== qrWidthPx || tmpQrImg.naturalHeight !== qrHeightPx) {
-                // Escalado pixel-perfect: usar dimensiones naturales como fuente
-                ctx.drawImage(tmpQrImg, 0, 0, tmpQrImg.naturalWidth, tmpQrImg.naturalHeight, qrX, qrY, qrWidthPx, qrHeightPx);
-            } else {
-                // Sin escalado necesario, dibujo directo
-                ctx.drawImage(tmpQrImg, qrX, qrY);
-            }
+            ctx.drawImage(tmpQrImg, qrX, qrY, qrWidthPx, qrHeightPx);
 
             // Convertir canvas a PNG y embeber como UNA sola imagen en el PDF
             const dataUrl = canvas.toDataURL('image/png');
@@ -351,7 +335,7 @@ class QROverlayManager {
             const qrInnerPx = useCustomLayout ? (layoutSpec.qrSizePx || targetPx) : targetPx;
             const fetchWidth = Math.max(100, Math.round(qrInnerPx * oversampling));
             const fetchHeight = Math.max(100, Math.round(qrInnerPx * oversampling));
-            const qrUrl = `/qr_barcode?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}&error_correction=M&border=4`;
+            const qrUrl = `/report/barcode/?type=QR&value=${encodeURIComponent(qrText)}&width=${fetchWidth}&height=${fetchHeight}`;
 
             const resp = await fetch(qrUrl, { credentials: 'same-origin' });
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -404,24 +388,10 @@ class QROverlayManager {
                         }
                     }
 
-                    // Dibujar QR con escalado pixel-perfect (sin interpolación)
+                    // Dibujar QR
                     const qrY = logoImg ? (logoHeight + spacing) : 0;
                     const qrX = useCustomLayout ? (layoutSpec.qrMarginX || 0) : 0;
-                    
-                    // Asegurar que el escalado sea exacto sin interpolación
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.webkitImageSmoothingEnabled = false;
-                    ctx.mozImageSmoothingEnabled = false;
-                    ctx.msImageSmoothingEnabled = false;
-                    
-                    // Si el QR necesita escalado, usar drawImage con parámetros exactos
-                    if (tmpImg.naturalWidth !== qrInnerPx || tmpImg.naturalHeight !== qrInnerPx) {
-                        // Escalado pixel-perfect: usar el tamaño natural como fuente y escalar a qrInnerPx
-                        ctx.drawImage(tmpImg, 0, 0, tmpImg.naturalWidth, tmpImg.naturalHeight, qrX, qrY, qrInnerPx, qrInnerPx);
-                    } else {
-                        // Sin escalado necesario, dibujo directo
-                        ctx.drawImage(tmpImg, qrX, qrY);
-                    }
+                    ctx.drawImage(tmpImg, qrX, qrY, qrInnerPx, qrInnerPx);
 
                     const dataUrl = canvas.toDataURL('image/png');
                     imgEl.src = dataUrl;
