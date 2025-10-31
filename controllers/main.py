@@ -801,6 +801,14 @@ class ProductPlannerPortal(CustomerPortal):
                         <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #374151;">Configuración de Calidad</h4>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                                <span style="min-width: 80px;">Método:</span>
+                                <select id="qr-method" style="flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <option value="backend-api" selected>API Backend (Recomendado)</option>
+                                    <option value="javascript-pure">JavaScript Puro</option>
+                                    <option value="hybrid">Híbrido (Backend + JS)</option>
+                                </select>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
                                 <input type="checkbox" id="use-svg-qr" checked style="margin: 0;">
                                 <span>Usar SVG (máxima calidad vectorial)</span>
                             </label>
@@ -812,6 +820,7 @@ class ProductPlannerPortal(CustomerPortal):
                                     <option value="8">8x (Bueno)</option>
                                     <option value="12">12x (Alto)</option>
                                     <option value="16">16x (Máximo)</option>
+                                    <option value="20">20x (Ultra)</option>
                                 </select>
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
@@ -821,6 +830,15 @@ class ProductPlannerPortal(CustomerPortal):
                                     <option value="4" selected>4x (Alta)</option>
                                     <option value="6">6x (Muy Alta)</option>
                                     <option value="8">8x (Ultra)</option>
+                                </select>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                                <span style="min-width: 80px;">Corrección:</span>
+                                <select id="error-correction" style="flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <option value="L">Baja (7%)</option>
+                                    <option value="M" selected>Media (15%)</option>
+                                    <option value="Q">Alta (25%)</option>
+                                    <option value="H">Máxima (30%)</option>
                                 </select>
                             </label>
                         </div>
@@ -858,15 +876,19 @@ class ProductPlannerPortal(CustomerPortal):
                 if (!window.qrOverlayManager) throw new Error('qrOverlayManager no inicializado');
                 
                 // Obtener configuración de calidad del usuario
+                const method = document.getElementById('qr-method').value;
                 const useSvg = document.getElementById('use-svg-qr').checked;
                 const oversampleFactor = document.getElementById('oversample-factor').value;
                 const resolutionFactor = parseInt(document.getElementById('resolution-factor').value);
+                const errorCorrection = document.getElementById('error-correction').value;
                 
                 // Configurar opciones de calidad
                 const qualityOptions = {
+                    method: method,
                     useSvg: useSvg,
                     oversampleFactor: oversampleFactor,
-                    resolutionFactor: resolutionFactor
+                    resolutionFactor: resolutionFactor,
+                    errorCorrection: errorCorrection
                 };
                 
                 await window.qrOverlayManager.generateQROverlay(
@@ -886,14 +908,18 @@ class ProductPlannerPortal(CustomerPortal):
         // Actualizar vista previa del QR en la tarjeta para evitar borrosidad
         const updatePreview = () => {
             try {
+                const method = document.getElementById('qr-method').value;
                 const useSvg = document.getElementById('use-svg-qr').checked;
                 const oversampleFactor = document.getElementById('oversample-factor').value;
                 const resolutionFactor = parseInt(document.getElementById('resolution-factor').value);
+                const errorCorrection = document.getElementById('error-correction').value;
                 
                 const qualityOptions = {
+                    method: method,
                     useSvg: useSvg,
                     oversampleFactor: oversampleFactor,
-                    resolutionFactor: resolutionFactor
+                    resolutionFactor: resolutionFactor,
+                    errorCorrection: errorCorrection
                 };
                 
                 const targetPx = layoutSpec ? layoutSpec.containerWidth : window.qrOverlayManager.convertSizeToPixels(config.qrSize);
@@ -907,9 +933,11 @@ class ProductPlannerPortal(CustomerPortal):
         updatePreview();
         
         // Actualizar vista previa cuando cambien los controles
+        document.getElementById('qr-method').addEventListener('change', updatePreview);
         document.getElementById('use-svg-qr').addEventListener('change', updatePreview);
         document.getElementById('oversample-factor').addEventListener('change', updatePreview);
         document.getElementById('resolution-factor').addEventListener('change', updatePreview);
+        document.getElementById('error-correction').addEventListener('change', updatePreview);
         </script>
 </body>
 </html>
@@ -919,6 +947,202 @@ class ProductPlannerPortal(CustomerPortal):
             html_content,
             headers={'Content-Type': 'text/html; charset=utf-8'}
         )
+
+    @http.route([
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js_card',
+        '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js_card'
+    ], type='http', auth="user", website=True)
+    def print_certificate_with_qr_overlay_js_card(self, **kwargs):
+        """
+        Endpoint para la solución JavaScript Card de overlay QR.
+        Muestra una imagen QR desde el servicio externo https://ctf-qr.onrender.com/card?qr=
+        en lugar de generar el QR localmente.
+        """
+        strurlruta = kwargs.get('ruta_url')
+        strurl = kwargs.get('ruta_urlqr')
+        idcertificado = kwargs.get('idcertificado')
+        xid = kwargs.get('id')
+        xuserid = kwargs.get('userid')
+
+        _logger.info("print_certificate_with_qr_overlay_js_card - Generando página JS Card para tipo: '%s'" % strurlruta)
+
+        # Validación de parámetros obligatorios
+        if not strurlruta:
+            return self._return_error_response("Parámetro ruta_url requerido")
+        if not xid or xid == 'False':
+            return self._return_error_response("ID de registro inválido")
+        if not xuserid or xuserid == 'False':
+            return self._return_error_response("ID de usuario inválido")
+
+        # Búsqueda dinámica del tipo de documento
+        tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
+        if not tiposdocumentos:
+            return self._return_error_response("Tipo de documento '%s' no encontrado" % strurlruta)
+
+        # Conversión segura
+        registro_id = int(xid) if xid and str(xid).isdigit() else False
+        cliente_id = int(xuserid) if xuserid and str(xuserid).isdigit() else False
+
+        # Búsqueda del certificado
+        if strurlruta_final == 'personas':
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('personas_id', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+        else:
+            domain = [('xtipodocumento', '=', tiposdocumentos.id),
+                      ('xmaquinaria', '=', registro_id),
+                      ('cliente_id', '=', cliente_id)]
+
+        slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain, order='fecha_vigencia desc', limit=1)
+
+        # Fallback con parent_id
+        if not slide_slide_obj and cliente_id:
+            try:
+                partner = request.env['res.partner'].sudo().browse(cliente_id)
+                if partner and partner.parent_id:
+                    domain_parent = [(d[0], d[1], d[2]) for d in domain]
+                    for i, d in enumerate(domain_parent):
+                        if d[0] == 'cliente_id':
+                            domain_parent[i] = ('cliente_id', '=', partner.parent_id.id)
+                    slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search(domain_parent, order='fecha_vigencia desc', limit=1)
+            except Exception as e:
+                _logger.error("print_certificate_with_qr_overlay_js_card - Error en fallback parent_id: %s" % str(e))
+
+        if not slide_slide_obj:
+            return self._return_error_response("Certificado no encontrado")
+
+        # PDF original
+        original_pdf = slide_slide_obj.x_certificado_publicado_file
+        if not original_pdf:
+            return self._return_error_response("El certificado no tiene archivo PDF asociado")
+
+        # Base URL
+        urlbase = request.env['ir.config_parameter'].sudo().search([('key', '=', 'web.base.url')])
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+
+        # URL de verificación para el QR
+        if strurlruta_final == 'personas':
+            xurldownload = base_url + '/web/certificado_current/download_pdf/' + str(idcertificado if idcertificado else slide_slide_obj.id)
+        else:
+            xurldownload = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid)
+
+        # URL del PDF original
+        pdf_url = base_url + '/web/content/informes.encuestas.merge/' + str(slide_slide_obj.id) + '/x_certificado_publicado_file'
+
+        # Para JS Card, forzamos el tamaño a 1.5cm
+        qr_size = '1.5cm'
+        qr_css_width = 118
+        qr_css_height = '233px'
+
+        # Nombre del archivo
+        if slide_slide_obj.file_name_certificado:
+            filename = slide_slide_obj.file_name_certificado.replace('.pdf', '-QR-JS-CARD.pdf')
+        else:
+            filename = (slide_slide_obj.codigocliente + '-QR-JS-CARD.pdf') if slide_slide_obj.codigocliente else 'CERTIFICADO_QR_JS_CARD.pdf'
+
+        # Construir URLs auxiliares
+        import urllib.parse
+        # URL del servicio externo para generar la imagen QR
+        external_qr_url = 'https://ctf-qr.onrender.com/card?qr=' + urllib.parse.quote(xurldownload)
+        overlay_url = base_url + '/web/ultimocertificado/' + str(strurlruta_final) + '/' + str(xid) + '/' + str(xuserid) + '/' + str(strurl) + '/overlay'
+
+        # Página HTML sin QWeb: diseño 2 columnas con QR externo y visor de certificado
+        html_content = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Certificado + QR Card (Vista)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #f6f8fa; --card: #fff; --text: #1f2937; --muted: #6b7280; --primary: #2563eb; --border: #e5e7eb;
+        }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+        .wrapper { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .header { margin-bottom: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
+        @media (max-width: 992px) { .grid { grid-template-columns: 1fr; } }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.03); }
+        .title { font-size: 18px; margin: 0 0 12px 0; }
+        .muted { color: var(--muted); font-size: 13px; }
+        .qr-box { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+        .qr-img { 
+            width: %spx; 
+            height: %s; 
+            border: 1px solid var(--border); 
+            background: #fff; 
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+        .actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+        .btn { background: var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:600; text-decoration: none; display: inline-block; }
+        .btn.secondary { background:#111827; }
+        .btn.outline { background:#fff; color:#111827; border:1px solid var(--border); }
+        .pdf-viewer { width: 100%%; height: 75vh; border: 1px solid var(--border); border-radius: 8px; }
+        .info-box { margin: 12px 0; padding: 12px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; }
+        .info-box h4 { margin: 0 0 8px 0; font-size: 14px; color: #0c4a6e; }
+        .info-box p { margin: 0; font-size: 13px; color: #075985; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <h2 style="margin:0">Certificado + QR Card (Servicio Externo)</h2>
+            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado por servicio externo para pruebas.</p>
+        </div>
+
+        <div class="grid">
+            <!-- Columna izquierda: QR desde servicio externo -->
+            <div class="card">
+                <h3 class="title">Código QR Card</h3>
+                <div class="qr-box">
+                    <img class="qr-img" src="%s" alt="QR de verificación desde servicio externo" 
+                         style="max-width: %spx; max-height: %s;"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display: none; padding: 20px; text-align: center; border: 2px dashed #ccc; color: #666;">
+                        Error cargando imagen QR del servicio externo
+                    </div>
+                    <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
+                    
+                    <!-- Información del servicio externo -->
+                    <div class="info-box">
+                        <h4>Servicio Externo</h4>
+                        <p><strong>URL:</strong> https://ctf-qr.onrender.com/card</p>
+                        <p><strong>Parámetro QR:</strong> %s</p>
+                        <p>Esta es una versión de prueba que utiliza un servicio externo para generar la imagen QR.</p>
+                    </div>
+                    
+                    <div class="actions">
+                        <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
+                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna derecha: visor del certificado normal -->
+            <div class="card">
+                <h3 class="title">Certificado</h3>
+                <object class="pdf-viewer" data="%s" type="application/pdf">
+                    <p>No se pudo incrustar el PDF en el navegador. <a href="%s" target="_blank">Descargar certificado</a></p>
+                </object>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, xurldownload, overlay_url, external_qr_url, pdf_url, pdf_url)
+
+        return werkzeug.wrappers.Response(
+            html_content,
+            headers={'Content-Type': 'text/html; charset=utf-8'}
+        )
+
     def download_equipos_patrones_pdf(self,id,**kwargs):
         equipo = request.env['informes.encuestas.equipos'].sudo().search([('id','=',id)],limit=1)
         filename=''

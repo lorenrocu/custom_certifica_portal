@@ -25,6 +25,28 @@
         </template>
         <report id="print_qr_overlay_js_backend15" menu="True" string="Certificado + QR (JavaScript) - 1.5cm" model="informes.encuestas.merge" report_type="qweb-html" file="custom_certifica_portal.report_overlay_js_backend15" name="custom_certifica_portal.report_overlay_js_backend15"/>
 
+        <!-- ============ 1.5 cm JS CARD ============ -->
+        <template id="overlay_js_card_backend15_page">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
+            <t t-set="idreg" t-value="(doc.xtipodocumento.code == 'personas') and (doc.personas_id.id or 0) or (doc.xmaquinaria.id or 0)" />
+            <t t-set="uid" t-value="doc.cliente_id.id or env.user.id" />
+            <t t-set="overlay_js_card_url" t-value="'/web/ultimocertificado/%s/%s/%s/print_qr15/overlay_js_card' % (ruta_url, idreg, uid)" />
+            <div class="page">
+                <h3>Generando certificado con QR Card (Servicio Externo) - 1.5cm</h3>
+                <p>Si la descarga no inicia automáticamente, <a t-att-href="overlay_js_card_url">haz clic aquí</a>.</p>
+                <script type="text/javascript">window.location = "<t t-esc='overlay_js_card_url'/>";</script>
+            </div>
+        </template>
+        <template id="report_overlay_js_card_backend15">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.overlay_js_card_backend15_page" />
+                </t>
+            </t>
+        </template>
+        <report id="print_qr_overlay_js_card_backend15" menu="True" string="Certificado + QR Card (Servicio Externo) - 1.5cm" model="informes.encuestas.merge" report_type="qweb-html" file="custom_certifica_portal.report_overlay_js_card_backend15" name="custom_certifica_portal.report_overlay_js_card_backend15"/>
+
         <!-- ============ 3.5 cm ============ -->
         <template id="overlay_js_backend35_page">
             <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
