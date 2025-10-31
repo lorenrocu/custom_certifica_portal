@@ -12,7 +12,7 @@
         </template>
 
         <template id="report_qrcode15_backend">
-            <t t-call="custom_certifica_portal.minimal_pdf_layout">
+            <t t-call="web.basic_layout">
                 <t t-foreach="docs" t-as="doc">
                     <t t-call="custom_certifica_portal.print2_qr15_backend" />
                 </t>
@@ -24,7 +24,7 @@
                 menu="True"
                 string="QRCode - 1.5cm"
                 model="informes.encuestas.merge"
-                report_type="qweb-pdf"
+                report_type="qweb-html"
                 file="custom_certifica_portal.report_qrcode15_backend"
                 name="custom_certifica_portal.report_qrcode15_backend"
                 print_report_name="'Qrcode-1.5 - %s' % (object.codigocliente)" />
