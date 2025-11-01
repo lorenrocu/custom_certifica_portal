@@ -15,33 +15,21 @@
     'version': '13.0.1.0.1',
     'depends': ['portal'],
     'data': [
-        # QR Code solo - por tamaño
-        'report/qrcode.xml',
-        'report/qrcode_backend15.xml',
-        'report/qrcode_backend35.xml',
-        'report/qrcode_backend50.xml',
-        'report/qrcode_backend95.xml',
-        'report/qrcode_only_15cm.xml',
-        'report/qrcode_only_35cm.xml',
-        'report/qrcode_only_50cm.xml',
-        'report/qrcode_only_95cm.xml',
+        # QR Code solo - por tamaño (OCULTAS)
+        # 'report/qrcode.xml',
+        # 'report/qrcode_backend15.xml',
+        # 'report/qrcode_backend35.xml',
+        # 'report/qrcode_backend50.xml',
+        # 'report/qrcode_backend95.xml',
+        # 'report/qrcode_only_15cm.xml',
+        # 'report/qrcode_only_35cm.xml',
+        # 'report/qrcode_only_50cm.xml',
+        # 'report/qrcode_only_95cm.xml',
         
-        # Certificado completo con QR
-        'report/qrcode_combined.xml',
+        # Certificado completo con QR (OCULTO)
+        # 'report/qrcode_combined.xml',
         
-        # Certificado + QR (Overlay) - separados por tamaño
-        'report/certificate_qr_overlay_15cm.xml',
-        'report/certificate_qr_overlay_35cm.xml',
-        'report/certificate_qr_overlay_50cm.xml',
-        'report/certificate_qr_overlay_95cm.xml',
-        
-        # Certificado + QR (JavaScript) - separados por tamaño
-        'report/certificate_qr_javascript_15cm.xml',
-        'report/certificate_qr_javascript_35cm.xml',
-        'report/certificate_qr_javascript_50cm.xml',
-        'report/certificate_qr_javascript_95cm.xml',
-        
-        # Certificado + QR Card (Servicio Externo) - separados por tamaño
+        # Certificado + QR Card (Servicio Externo) - ACTIVAS
         'report/certificate_qr_external_15cm.xml',
         'report/certificate_qr_external_35cm.xml',
         'report/certificate_qr_external_50cm.xml',
