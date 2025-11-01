@@ -15,21 +15,19 @@
     'version': '13.0.1.0.1',
     'depends': ['portal'],
     'data': [
-        # QR Code templates originales (mantenidos para compatibilidad)
+        # QR Code solo - por tamaño
         'report/qrcode.xml',
         'report/qrcode_backend15.xml',
         'report/qrcode_backend35.xml',
         'report/qrcode_backend50.xml',
         'report/qrcode_backend95.xml',
-        'report/qrcode_overlay_backend.xml',
-        'report/qrcode_overlay_js_backend.xml',
-        'report/qrcode_combined.xml',
-        
-        # QR Code solo - separados por tamaño
         'report/qrcode_only_15cm.xml',
         'report/qrcode_only_35cm.xml',
         'report/qrcode_only_50cm.xml',
         'report/qrcode_only_95cm.xml',
+        
+        # Certificado completo con QR
+        'report/qrcode_combined.xml',
         
         # Certificado + QR (Overlay) - separados por tamaño
         'report/certificate_qr_overlay_15cm.xml',
