@@ -203,7 +203,50 @@
                   </div>
                 </div>
 
+                <!-- Nuevo: Certificado con QR incrustado (Overlay) para pruebas -->
+                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 15px; border-top: 1px dashed #cccccc; padding-top: 10px;">
+                  <div style="width: 100%; text-align: center; margin-bottom: 10px;">
+                    <h6 style="color: #2E86AB; margin: 0;">
+                      <i class="fa fa-qrcode"/> QR incrustado (Overlay) - Beta
+                    </h6>
+                    <small style="color: #666;">Superpone el QR en la primera página del certificado original</small>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-warning btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/overlay')" title="Certificado con QR incrustado 1.5cm" target="_blank">
+                      <i class="fa fa-magic"/> Overlay 1.5 cm
+                    </a>
+                  </div>
+                </div>
 
+                <!-- Nuevo: Certificado con QR JavaScript (Sin dependencias del servidor) -->
+                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 15px; border-top: 1px dashed #28a745; padding-top: 10px;">
+                  <div style="width: 100%; text-align: center; margin-bottom: 10px;">
+                    <h6 style="color: #28a745; margin: 0;">
+                      <i class="fa fa-code"/> QR JavaScript (Recomendado)
+                    </h6>
+                    <small style="color: #666;">Genera el QR usando JavaScript en el navegador - Sin dependencias del servidor</small>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-success btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/overlay_js')" title="Certificado con QR JavaScript 1.5cm" target="_blank">
+                      <i class="fa fa-code"/> JS 1.5 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-success btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/overlay_js')" title="Certificado con QR JavaScript 3.5cm" target="_blank">
+                      <i class="fa fa-code"/> JS 3.5 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-success btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/overlay_js')" title="Certificado con QR JavaScript 5.0cm" target="_blank">
+                      <i class="fa fa-code"/> JS 5.0 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-success btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr95/overlay_js')" title="Certificado con QR JavaScript 9.5cm" target="_blank">
+                      <i class="fa fa-code"/> JS 9.5 cm
+                    </a>
+                  </div>
+                </div>
 
                 <!-- Nuevo: Certificado con QR Card (Servicio Externo) -->
                 <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 15px; border-top: 1px dashed #17a2b8; padding-top: 10px;">
@@ -220,6 +263,14 @@
                     <!-- Nuevo: QR Card 3.5cm (Servicio Externo) -->
                     <a class="btn btn-info btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/overlay_js_card_35')" title="Certificado con QR Card 3.5cm (Servicio Externo)" target="_blank">
                       <i class="fa fa-external-link"/> Card 3.5 cm
+                    </a>
+                    <!-- Nuevo: QR Card 5.0cm (Servicio Externo) -->
+                    <a class="btn btn-info btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/overlay_js_card_50')" title="Certificado con QR Card 5.0cm (Servicio Externo)" target="_blank">
+                      <i class="fa fa-external-link"/> Card 5.0 cm
+                    </a>
+                    <!-- Nuevo: QR Card 9.5cm (Servicio Externo) -->
+                    <a class="btn btn-info btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr95/overlay_js_card_95')" title="Certificado con QR Card 9.5cm (Servicio Externo)" target="_blank">
+                      <i class="fa fa-external-link"/> Card 9.5 cm
                     </a>
                   </div>
                 </div>
