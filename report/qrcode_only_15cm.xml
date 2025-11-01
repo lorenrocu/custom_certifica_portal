@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- QRCode Solo - 1.5cm -->
+        <template id="print_qr_only_15cm_template">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <div class="page" style="position:absolute; top:-40; left:0; ">
+                <div style="display: inherit;margin:auto;text-align: center;">
+                    <img t-if="doc.company_id.logo" t-att-src="'data:image/png;base64,%s' %  to_text(doc.company_id.logo) " style="max-height:30px;"/>
+                </div>
+                <div style="display: inherit;margin:auto;text-align: center;padding-top:5px;">
+                    <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', xurldownload, h, w)"/>
+                </div>
+            </div>
+        </template>
+
+        <template id="report_qr_only_15cm">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.print_qr_only_15cm_template" />
+                </t>
+            </t>
+        </template>
+
+        <report
+                id="print_qr_only_15cm"
+                menu="True"
+                string="QRCode - 1.5cm"
+                model="informes.encuestas.merge"
+                report_type="qweb-pdf"
+                file="custom_certifica_portal.report_qr_only_15cm"
+                name="custom_certifica_portal.report_qr_only_15cm"
+                print_report_name="'QRCode-1.5cm - %s' % (object.codigocliente)" />
+
+        <!-- Backend version -->
+        <template id="print_qr_only_15cm_backend_template">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <div class="page" style="position:absolute; top:-40; left:0; ">
+                <div style="display: inherit;margin:auto;text-align: center;">
+                    <img t-att-src="'data:image/png;base64,%s' %  to_text(doc.qr_code15)" />
+                </div>
+            </div>
+        </template>
+
+        <template id="report_qr_only_15cm_backend">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.print_qr_only_15cm_backend_template" />
+                </t>
+            </t>
+        </template>
+
+        <report
+                id="print_qr_only_15cm_backend"
+                menu="True"
+                string="QRCode Backend - 1.5cm"
+                model="informes.encuestas.merge"
+                report_type="qweb-html"
+                file="custom_certifica_portal.report_qr_only_15cm_backend"
+                name="custom_certifica_portal.report_qr_only_15cm_backend"
+                print_report_name="'QRCode-Backend-1.5cm - %s' % (object.codigocliente)" />
+
+    </data>
+</odoo>

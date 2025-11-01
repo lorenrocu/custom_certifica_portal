@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Certificado + QR (Overlay) - 1.5cm -->
+        <template id="certificate_qr_overlay_15cm_page">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
+            <t t-set="idreg" t-value="(doc.xtipodocumento.code == 'personas') and (doc.personas_id.id or 0) or (doc.xmaquinaria.id or 0)" />
+            <t t-set="uid" t-value="doc.cliente_id.id or env.user.id" />
+            <t t-set="overlay_url" t-value="'/web/ultimocertificado/%s/%s/%s/print_qr15/overlay' % (ruta_url, idreg, uid)" />
+            <div class="page">
+                <h3>Generando certificado con QR (Overlay) - 1.5cm</h3>
+                <p>Si la descarga no inicia automáticamente, <a t-att-href="overlay_url">haz clic aquí</a>.</p>
+                <script type="text/javascript">window.location = "<t t-esc='overlay_url'/>";</script>
+            </div>
+        </template>
+
+        <template id="report_certificate_qr_overlay_15cm">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.certificate_qr_overlay_15cm_page" />
+                </t>
+            </t>
+        </template>
+
+        <report 
+            id="print_certificate_qr_overlay_15cm" 
+            menu="True" 
+            string="Certificado + QR (Overlay) - 1.5cm" 
+            model="informes.encuestas.merge" 
+            report_type="qweb-html" 
+            file="custom_certifica_portal.report_certificate_qr_overlay_15cm" 
+            name="custom_certifica_portal.report_certificate_qr_overlay_15cm"
+            print_report_name="'Certificado-QR-Overlay-1.5cm - %s' % (object.codigocliente)" />
+
+    </data>
+</odoo>
