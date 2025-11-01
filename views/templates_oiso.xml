@@ -135,15 +135,6 @@
 
                 </div>
 
-                <!-- Nuevo: botón de Overlay para pruebas -->
-                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 10px;">
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-warning btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/overlay')" title="Certificado con QR incrustado (Overlay) 1.5cm" target="_blank">
-                      <i class="fa fa-magic"/> Overlay 1.5 cm
-                    </a>
-                  </div>
-                </div>
-
               </li>
 
             </ul>
