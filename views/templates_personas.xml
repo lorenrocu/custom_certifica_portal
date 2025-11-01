@@ -149,7 +149,6 @@
                   <th>Código QR</th>
                   <th>Imprimir</th>
                   <th style="background-color: #2E86AB; color: white;">Certificado + QR</th>
-                  <th style="background-color: #f39c12; color: white;">QR Card (Externo)</th>
                   <th style="width: 100px;">Certificado</th>
 
                   <th style="width: 100px;">Próxima Certificación</th>
@@ -180,21 +179,35 @@
                         <a class="btn btn-primary btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/combined')" title="Certificado Completo con QR 5.0cm" target="_blank" style="font-size: 10px;">
                           <i class="fa fa-download"/> 5.0cm
                         </a>
-                      </div>
-                    </td>
-                    <td style="background-color: #fff3cd;">
-                      <div class="btn-group-vertical" style="width: 100%;">
-                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/overlay_js_card')" title="QR Card 1.5cm (Servicio Externo)" target="_blank" style="margin-bottom: 2px; font-size: 10px;">
-                          <i class="fa fa-external-link"/> 1.5cm
+                        <!-- Nuevo: Overlay (QR incrustado) para pruebas -->
+                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/overlay')" title="QR incrustado (Overlay) 1.5cm" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-magic"/> Overlay 1.5cm
                         </a>
-                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/')+str(certificado.id)+str('/overlay_js_card_35')" title="QR Card 3.5cm (Servicio Externo)" target="_blank" style="margin-bottom: 2px; font-size: 10px;">
-                          <i class="fa fa-external-link"/> 3.5cm
+                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/overlay')" title="QR incrustado (Overlay) 5.0cm" target="_blank" style="margin-top: 4px; font-size: 10px;">
+                          <i class="fa fa-magic"/> Overlay 5.0cm
                         </a>
-                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/overlay_js_card_50')" title="QR Card 5.0cm (Servicio Externo)" target="_blank" style="margin-bottom: 2px; font-size: 10px;">
-                          <i class="fa fa-external-link"/> 5.0cm
+                        <!-- Nuevo: JavaScript (QR sin dependencias del servidor) -->
+                        <a class="btn btn-success btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/overlay_js')" title="QR JavaScript 1.5cm (Recomendado)" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-code"/> JS 1.5cm
                         </a>
-                        <a class="btn btn-warning btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr95/')+str(certificado.id)+str('/overlay_js_card_95')" title="QR Card 9.5cm (Servicio Externo)" target="_blank" style="font-size: 10px;">
-                          <i class="fa fa-external-link"/> 9.5cm
+                        <a class="btn btn-success btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/overlay_js')" title="QR JavaScript 5.0cm (Recomendado)" target="_blank" style="margin-top: 4px; font-size: 10px;">
+                          <i class="fa fa-code"/> JS 5.0cm
+                        </a>
+                        <!-- Nuevo: QR Card (Servicio Externo) -->
+                        <a class="btn btn-info btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)+str('/overlay_js_card')" title="QR Card 1.5cm (Servicio Externo)" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-external-link"/> Card 1.5cm
+                        </a>
+                        <!-- Nuevo: QR Card 3.5cm (Servicio Externo) -->
+                        <a class="btn btn-info btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/')+str(certificado.id)+str('/overlay_js_card_35')" title="QR Card 3.5cm (Servicio Externo)" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-external-link"/> Card 3.5cm
+                        </a>
+                        <!-- Nuevo: QR Card 5.0cm (Servicio Externo) -->
+                        <a class="btn btn-info btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/')+str(certificado.id)+str('/overlay_js_card_50')" title="QR Card 5.0cm (Servicio Externo)" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-external-link"/> Card 5.0cm
+                        </a>
+                        <!-- Nuevo: QR Card 9.5cm (Servicio Externo) -->
+                        <a class="btn btn-info btn-sm o_download_btn" t-att-href="str(urldownload)+str('/print_qr95/')+str(certificado.id)+str('/overlay_js_card_95')" title="QR Card 9.5cm (Servicio Externo)" target="_blank" style="margin-top: 6px; font-size: 10px;">
+                          <i class="fa fa-external-link"/> Card 9.5cm
                         </a>
                       </div>
                     </td>
