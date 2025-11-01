@@ -203,6 +203,32 @@
                   </div>
                 </div>
 
+                <!-- QR Card (Servicio Externo) -->
+                <div class="alert alert-info" style="margin-top: 20px;">
+                  <h6><i class="fa fa-external-link"/> QR Card (Servicio Externo)</h6>
+                  <small style="color: #666;">Genera código QR usando servicio externo para visualización web</small>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-warning btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/overlay_js_card')" title="QR Card 1.5cm (Servicio Externo)" target="_blank">
+                      <i class="fa fa-external-link"/> QR Card 1.5 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-warning btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr35/overlay_js_card_35')" title="QR Card 3.5cm (Servicio Externo)" target="_blank">
+                      <i class="fa fa-external-link"/> QR Card 3.5 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-warning btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr50/overlay_js_card_50')" title="QR Card 5.0cm (Servicio Externo)" target="_blank">
+                      <i class="fa fa-external-link"/> QR Card 5.0 cm
+                    </a>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-warning btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr95/overlay_js_card_95')" title="QR Card 9.5cm (Servicio Externo)" target="_blank">
+                      <i class="fa fa-external-link"/> QR Card 9.5 cm
+                    </a>
+                  </div>
+                </div>>
+
 
 
 

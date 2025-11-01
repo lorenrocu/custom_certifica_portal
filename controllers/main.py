@@ -869,3 +869,118 @@ class WebsiteAccount(CustomerPortal):
         })
 
         return values
+
+    @http.route(['/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js_card',
+                 '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js_card'], type='http', auth="user",website=True)
+    def print_certificate_with_qr_overlay_js_card(self,**kwargs):
+        """
+        Genera una página HTML con QR usando servicio externo (QR Card)
+        """
+        strurlruta = kwargs.get('ruta_url')
+        strurl = kwargs.get('ruta_urlqr')
+        idcertificado = kwargs.get('idcertificado')
+        xid = kwargs.get('id')
+        xuserid = kwargs.get('userid')
+
+        _logger.info("print_certificate_with_qr_overlay_js_card - Generando QR Card para tipo: '%s'" % strurlruta)
+
+        # APLICAR BÚSQUEDA DINÁMICA PARA QR ANTIGUOS Y NUEVOS
+        tiposdocumentos, strurlruta_final = self._buscar_tipo_documento_dinamico(strurlruta)
+        
+        if not tiposdocumentos:
+            _logger.error("print_certificate_with_qr_overlay_js_card - Tipo de documento no encontrado para: '%s'" % strurlruta)
+            return self._return_error_response("No se puede generar QR Card: Tipo de documento '%s' no encontrado" % strurlruta)
+
+        # Buscar el certificado
+        slide_slide_obj = request.env['informes.encuestas.merge'].sudo().search([
+            ('id', '=', int(idcertificado) if idcertificado else int(xid)),
+        ], limit=1)
+
+        if not slide_slide_obj:
+            _logger.error("print_certificate_with_qr_overlay_js_card - Certificado no encontrado")
+            return self._return_error_response("Certificado no encontrado")
+
+        # Generar URL para el QR
+        urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
+        base_url = str(urlbase.value)
+        if 'tienda-desa.certificalatam.com' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+        elif base_url == 'https://tienda.certificalatam.com' and 'desa' in request.httprequest.host:
+            base_url = 'https://tienda-desa.certificalatam.com'
+            
+        # Usar el tipo final (mapeado si es necesario) para generar la URL
+        if strurlruta_final=='personas':
+            xurldownload = base_url+'/web/certificado_current/download_pdf/'+str(idcertificado if idcertificado else slide_slide_obj.id)
+        else:
+            xurldownload = base_url+'/web/ultimocertificado/'+str(strurlruta_final)+'/'+str(xid)+'/'+str(xuserid)
+
+        # Configurar tamaño del QR según el parámetro
+        qr_size = "150px"
+        if strurl=='print_qr15':
+            qr_size = "100px"
+        elif strurl=='print_qr35':
+            qr_size = "234px"
+        elif strurl=='print_qr50':
+            qr_size = "333px"
+        elif strurl=='print_qr95':
+            qr_size = "587px"
+
+        # Generar HTML con QR usando servicio externo
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR Card - {slide_slide_obj.codigocliente or 'Certificado'}</title>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; text-align: center; }}
+                .qr-container {{ border: 2px solid #2E86AB; padding: 20px; border-radius: 10px; display: inline-block; }}
+                .qr-title {{ color: #2E86AB; font-weight: bold; margin-bottom: 15px; }}
+                .qr-code {{ margin: 10px 0; }}
+                .qr-info {{ font-size: 12px; color: #666; margin-top: 10px; }}
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                <div class="qr-title">Código QR - Servicio Externo</div>
+                <div class="qr-code">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size={qr_size}x{qr_size}&data={xurldownload}" 
+                         alt="QR Code" style="width: {qr_size}; height: {qr_size};">
+                </div>
+                <div class="qr-info">
+                    Certificado: {slide_slide_obj.codigocliente or 'Sin código'}<br>
+                    Escanea para verificar autenticidad
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return request.make_response(
+            html_content,
+            headers=[
+                ('Content-Type', 'text/html; charset=utf-8'),
+                ('Content-Disposition', f'inline; filename="QR-Card-{slide_slide_obj.codigocliente or "certificado"}.html"')
+            ]
+        )
+
+    @http.route(['/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js_card_35',
+                 '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js_card_35'], type='http', auth="user",website=True)
+    def print_certificate_with_qr_overlay_js_card_35(self,**kwargs):
+        """QR Card 3.5cm usando servicio externo"""
+        kwargs['ruta_urlqr'] = 'print_qr35'
+        return self.print_certificate_with_qr_overlay_js_card(**kwargs)
+
+    @http.route(['/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js_card_50',
+                 '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js_card_50'], type='http', auth="user",website=True)
+    def print_certificate_with_qr_overlay_js_card_50(self,**kwargs):
+        """QR Card 5.0cm usando servicio externo"""
+        kwargs['ruta_urlqr'] = 'print_qr50'
+        return self.print_certificate_with_qr_overlay_js_card(**kwargs)
+
+    @http.route(['/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/overlay_js_card_95',
+                 '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>/overlay_js_card_95'], type='http', auth="user",website=True)
+    def print_certificate_with_qr_overlay_js_card_95(self,**kwargs):
+        """QR Card 9.5cm usando servicio externo"""
+        kwargs['ruta_urlqr'] = 'print_qr95'
+        return self.print_certificate_with_qr_overlay_js_card(**kwargs)
