@@ -1094,7 +1094,7 @@ class ProductPlannerPortal(CustomerPortal):
     <div class="wrapper">
         <div class="header">
             <h2 style="margin:0">Certificado + QR Card 5.0cm (Servicio Externo)</h2>
-            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado por servicio externo para pruebas.</p>
+            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado.</p>
         </div>
 
         <div class="grid">
@@ -1111,7 +1111,7 @@ class ProductPlannerPortal(CustomerPortal):
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
                     <div class="actions">
-                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
+                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR</a>
                     </div>
                 </div>
             </div>
@@ -1280,7 +1280,7 @@ class ProductPlannerPortal(CustomerPortal):
     <div class="wrapper">
         <div class="header">
             <h2 style="margin:0">Certificado + QR Card 9.5cm (Servicio Externo)</h2>
-            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado por servicio externo para pruebas.</p>
+            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado.</p>
         </div>
 
         <div class="grid">
@@ -1297,7 +1297,7 @@ class ProductPlannerPortal(CustomerPortal):
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
                     <div class="actions">
-                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
+                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR</a>
                     </div>
                 </div>
             </div>
@@ -1466,7 +1466,7 @@ class ProductPlannerPortal(CustomerPortal):
     <div class="wrapper">
         <div class="header">
             <h2 style="margin:0">Certificado + QR Card 3.5cm (Servicio Externo)</h2>
-            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado por servicio externo para pruebas.</p>
+            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado.</p>
         </div>
 
         <div class="grid">
@@ -1483,7 +1483,7 @@ class ProductPlannerPortal(CustomerPortal):
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
                     <div class="actions">
-                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
+                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR</a>
                     </div>
                 </div>
             </div>
@@ -1651,8 +1651,8 @@ class ProductPlannerPortal(CustomerPortal):
 <body>
     <div class="wrapper">
         <div class="header">
-            <h2 style="margin:0">Certificado + QR Card (Servicio Externo)</h2>
-            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado por servicio externo para pruebas.</p>
+            <h2 style="margin:0">Certificado + QR Card</h2>
+            <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado.</p>
         </div>
 
         <div class="grid">
@@ -1669,7 +1669,7 @@ class ProductPlannerPortal(CustomerPortal):
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
                     <div class="actions">
-                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
+                        <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR</a>
                     </div>
                 </div>
             </div>
