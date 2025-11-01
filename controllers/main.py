@@ -1093,7 +1093,7 @@ class ProductPlannerPortal(CustomerPortal):
 <body>
     <div class="wrapper">
         <div class="header">
-            <h2 style="margin:0">Certificado + QR Card 5.0cm (Servicio Externo)</h2>
+            <h2 style="margin:0">Certificado + QR Card 5.0cm </h2>
             <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado.</p>
         </div>
 
@@ -1279,7 +1279,7 @@ class ProductPlannerPortal(CustomerPortal):
 <body>
     <div class="wrapper">
         <div class="header">
-            <h2 style="margin:0">Certificado + QR Card 9.5cm (Servicio Externo)</h2>
+            <h2 style="margin:0">Certificado + QR Card 9.5cm </h2>
             <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado.</p>
         </div>
 
@@ -1465,7 +1465,7 @@ class ProductPlannerPortal(CustomerPortal):
 <body>
     <div class="wrapper">
         <div class="header">
-            <h2 style="margin:0">Certificado + QR Card 3.5cm (Servicio Externo)</h2>
+            <h2 style="margin:0">Certificado + QR Card 3.5cm </h2>
             <p class="muted">Tamaño del QR: <strong>%s</strong> • QR generado.</p>
         </div>
 

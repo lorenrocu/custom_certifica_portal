@@ -9,7 +9,7 @@
             <t t-set="uid" t-value="doc.cliente_id.id or env.user.id" />
             <t t-set="overlay_js_card_url" t-value="'/web/ultimocertificado/%s/%s/%s/print_qr15/overlay_js_card' % (ruta_url, idreg, uid)" />
             <div class="page">
-                <h3>Generando certificado con QR Card (Servicio Externo) - 1.5cm</h3>
+                <h3>Generando certificado con QR Card  - 1.5cm</h3>
                 <p>Si la descarga no inicia automáticamente, <a t-att-href="overlay_js_card_url">haz clic aquí</a>.</p>
                 <script type="text/javascript">window.location = "<t t-esc='overlay_js_card_url'/>";</script>
             </div>
