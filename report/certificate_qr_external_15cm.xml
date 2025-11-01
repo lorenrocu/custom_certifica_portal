@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Certificado + QR Card (Servicio Externo) - 1.5cm -->
+        <!-- QR Card - 1.5cm -->
         <template id="certificate_qr_external_15cm_page">
             <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
             <t t-set="ruta_url" t-value="doc.xtipodocumento.code or 'equiposdemedicion'" />
@@ -26,7 +26,7 @@
         <report 
             id="print_certificate_qr_external_15cm" 
             menu="True" 
-            string="Certificado + QR Card (Servicio Externo) - 1.5cm" 
+            string="QR Card - 1.5cm" 
             model="informes.encuestas.merge" 
             report_type="qweb-html" 
             file="custom_certifica_portal.report_certificate_qr_external_15cm" 

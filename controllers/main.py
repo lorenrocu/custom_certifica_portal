@@ -1110,17 +1110,7 @@ class ProductPlannerPortal(CustomerPortal):
                     </div>
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
-                    <!-- Información del servicio externo -->
-                    <div class="info-box">
-                        <h4>Servicio Externo - 5.0cm</h4>
-                        <p><strong>URL:</strong> https://ctf-qr.onrender.com/card</p>
-                        <p><strong>Parámetro QR:</strong> %s</p>
-                        <p><strong>Tamaño:</strong> cm=5.0</p>
-                        <p>Esta es una versión de prueba que utiliza un servicio externo para generar la imagen QR de 5.0cm.</p>
-                    </div>
-                    
                     <div class="actions">
-                        <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
                         <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
                     </div>
                 </div>
@@ -1137,7 +1127,7 @@ class ProductPlannerPortal(CustomerPortal):
     </div>
 </body>
 </html>
-        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, xurldownload, overlay_url, external_qr_url, pdf_url, pdf_url)
+        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, external_qr_url, pdf_url, pdf_url)
 
         return werkzeug.wrappers.Response(
             html_content,
@@ -1306,17 +1296,7 @@ class ProductPlannerPortal(CustomerPortal):
                     </div>
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
-                    <!-- Información del servicio externo -->
-                    <div class="info-box">
-                        <h4>Servicio Externo - 9.5cm</h4>
-                        <p><strong>URL:</strong> https://ctf-qr.onrender.com/card</p>
-                        <p><strong>Parámetro QR:</strong> %s</p>
-                        <p><strong>Tamaño:</strong> cm=9.5</p>
-                        <p>Esta es una versión de prueba que utiliza un servicio externo para generar la imagen QR de 9.5cm.</p>
-                    </div>
-                    
                     <div class="actions">
-                        <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
                         <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
                     </div>
                 </div>
@@ -1333,7 +1313,7 @@ class ProductPlannerPortal(CustomerPortal):
     </div>
 </body>
 </html>
-        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, xurldownload, overlay_url, external_qr_url, pdf_url, pdf_url)
+        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, external_qr_url, pdf_url, pdf_url)
 
         return werkzeug.wrappers.Response(
             html_content,
@@ -1502,17 +1482,7 @@ class ProductPlannerPortal(CustomerPortal):
                     </div>
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
-                    <!-- Información del servicio externo -->
-                    <div class="info-box">
-                        <h4>Servicio Externo - 3.5cm</h4>
-                        <p><strong>URL:</strong> https://ctf-qr.onrender.com/card</p>
-                        <p><strong>Parámetro QR:</strong> %s</p>
-                        <p><strong>Tamaño:</strong> cm=3.5</p>
-                        <p>Esta es una versión de prueba que utiliza un servicio externo para generar la imagen QR de 3.5cm.</p>
-                    </div>
-                    
                     <div class="actions">
-                        <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
                         <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
                     </div>
                 </div>
@@ -1529,7 +1499,7 @@ class ProductPlannerPortal(CustomerPortal):
     </div>
 </body>
 </html>
-        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, xurldownload, overlay_url, external_qr_url, pdf_url, pdf_url)
+        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, external_qr_url, pdf_url, pdf_url)
 
         return werkzeug.wrappers.Response(
             html_content,
@@ -1698,16 +1668,7 @@ class ProductPlannerPortal(CustomerPortal):
                     </div>
                     <p class="muted" style="margin-top:8px; word-break:break-all; text-align:center">%s</p>
                     
-                    <!-- Información del servicio externo -->
-                    <div class="info-box">
-                        <h4>Servicio Externo</h4>
-                        <p><strong>URL:</strong> https://ctf-qr.onrender.com/card</p>
-                        <p><strong>Parámetro QR:</strong> %s</p>
-                        <p>Esta es una versión de prueba que utiliza un servicio externo para generar la imagen QR.</p>
-                    </div>
-                    
                     <div class="actions">
-                        <a class="btn outline" href="%s" target="_blank" rel="noopener">Descargar PDF con QR integrado (Servidor)</a>
                         <a class="btn secondary" href="%s" target="_blank" rel="noopener">Ver imagen QR externa</a>
                     </div>
                 </div>
@@ -1724,7 +1685,7 @@ class ProductPlannerPortal(CustomerPortal):
     </div>
 </body>
 </html>
-        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, xurldownload, overlay_url, external_qr_url, pdf_url, pdf_url)
+        """ % (qr_css_width, qr_css_height, qr_size, external_qr_url, qr_css_width, qr_css_height, xurldownload, external_qr_url, pdf_url, pdf_url)
 
         return werkzeug.wrappers.Response(
             html_content,

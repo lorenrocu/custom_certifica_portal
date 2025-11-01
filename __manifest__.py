@@ -29,7 +29,7 @@
         # Certificado completo con QR (OCULTO)
         # 'report/qrcode_combined.xml',
         
-        # Certificado + QR Card (Servicio Externo) - ACTIVAS
+        # QR Card - ACTIVAS
         'report/certificate_qr_external_15cm.xml',
         'report/certificate_qr_external_35cm.xml',
         'report/certificate_qr_external_50cm.xml',
