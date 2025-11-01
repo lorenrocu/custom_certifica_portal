@@ -135,15 +135,6 @@
 
                 </div>
 
-                <!-- QR JavaScript (Recomendado) -->
-                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 10px;">
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-success btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/overlay_js')" title="Certificado con QR JavaScript 1.5cm (Recomendado)" target="_blank">
-                      <i class="fa fa-code"/> JS 1.5 cm
-                    </a>
-                  </div>
-                </div>
-
               </li>
 
             </ul>
