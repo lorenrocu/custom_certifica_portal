@@ -230,7 +230,8 @@ class ProductPlannerPortal(CustomerPortal):
 
             if strurl in ('fisicos','quimicos','biologicos','ergonomicoypsicosocial'): #CERTIFICA - MAQUINARIA
                 stridpage='custom_certifica_portal.page_oiso'
-                sedecliente = listcertificados[0].sedecliente
+                # Evitar IndexError cuando no hay certificados
+                sedecliente = listcertificados[0].sedecliente if len(listcertificados) > 0 else ''
                 searchbar_inputs = {
                     'all': {'input': 'all', 'label': _('Búsqueda en todo')},
                     'serie': {'input': 'serie', 'label': _('Búsqueda en serie')},
