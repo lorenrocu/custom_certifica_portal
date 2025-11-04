@@ -435,9 +435,15 @@ class WebsiteAccount(CustomerPortal):
                 documentos_ids = listcertificados.mapped('xmaquinaria.id')
                 delivery_dates_count = len(documentos_ids)
 
+            # Evitar errores si el campo code no es una cadena válida
+            code = x.code if isinstance(x.code, str) and x.code.strip() else None
+            if not code:
+                _logger.warning('Tipo de encuesta portal con code inválido: id=%s, code=%s. Se omite en el menú del portal.', x.id, x.code)
+                continue
+
             listtipos.append({
-                'title':x.title,
-                'strurl':'/my/' + x.code,
+                'title': x.title,
+                'strurl': '/my/' + code,
                 'delivery_dates_count': delivery_dates_count,
             })
 
