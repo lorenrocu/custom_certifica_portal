@@ -3,18 +3,12 @@
     <data>
         <template id="print2_qr_card15_backend">
             <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
-            <div class="page" style="position:absolute; top:-40; left:0; ">
-                <div style="display: inherit;margin:auto;text-align: center;padding:20px;font-family: monospace;font-size: 12px;word-break: break-all;">
-                    <p t-esc="doc.xurldownload"/>
-                </div>
-            </div>
+            <t t-esc="doc.xurldownload"/>
         </template>
 
         <template id="report_qrcode_card15_backend">
-            <t t-call="web.basic_layout">
-                <t t-foreach="docs" t-as="doc">
-                    <t t-call="custom_certifica_portal.print2_qr_card15_backend" />
-                </t>
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="custom_certifica_portal.print2_qr_card15_backend" />
             </t>
         </template>
 
@@ -23,7 +17,7 @@
                 menu="True"
                 string="QRCode Card - 1.5cm"
                 model="informes.encuestas.merge"
-                report_type="qweb-html"
+                report_type="qweb-text"
                 file="custom_certifica_portal.report_qrcode_card15_backend"
                 name="custom_certifica_portal.report_qrcode_card15_backend"
                 print_report_name="'Qrcode-Card-1.5 - %s.txt' % (object.codigocliente)" />
