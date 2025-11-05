@@ -3,7 +3,7 @@
     <data>
         <template id="print2_qr_card35_backend">
             <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
-            <img t-att-src="'https://ctf-qr.onrender.com/card?qr=' + doc.xurldownload + '&amp;cm=3.5'" style="display: block; margin: auto;" />
+            <img t-att-src="'https://ctf-qr.onrender.com/card?qr=' + doc.xurldownload + '&amp;cm=3.5'" />
         </template>
 
         <template id="report_qrcode_card35_backend">
