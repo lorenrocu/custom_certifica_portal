@@ -24,6 +24,21 @@ class ProductPlannerPortal(CustomerPortal):
         idcertificado = kwargs.get('idcertificado')
         xid = kwargs.get('id')
         xuserid = kwargs.get('userid')
+        
+        # Si es print_qr_card15, devolver solo texto sin usar reportes
+        if strurl == 'print_qr_card15':
+            urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
+            if strurlruta=='personas':
+                xurldownload = str(urlbase.value)+'/web/certificado_current/download_pdf/'+str(idcertificado)
+            else:
+                xurldownload = str(urlbase.value)+'/web/ultimocertificado/'+str(strurlruta)+'/'+str(xid)+'/'+str(xuserid)
+            
+            response = werkzeug.wrappers.Response()
+            response.data = xurldownload.encode('utf-8')
+            response.mimetype = 'text/plain; charset=utf-8'
+            response.headers['Content-Disposition'] = 'inline; filename="qrcode_url.txt"'
+            return response
+        
         report_name = 'custom_certifica_portal.print_qr'
 
         urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
