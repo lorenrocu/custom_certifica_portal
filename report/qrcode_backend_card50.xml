@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="print2_qr_card50_backend">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <img t-att-src="'https://ctf-qr.onrender.com/card?qr=' + doc.xurldownload + '&amp;cm=5.0'" style="display: block; margin: auto;" />
+        </template>
+
+        <template id="report_qrcode_card50_backend">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="custom_certifica_portal.print2_qr_card50_backend" />
+            </t>
+        </template>
+
+        <report
+                id="print_qr_backend_card50"
+                menu="True"
+                string="QRCode Card - 5.0cm"
+                model="informes.encuestas.merge"
+                report_type="qweb-html"
+                file="custom_certifica_portal.report_qrcode_card50_backend"
+                name="custom_certifica_portal.report_qrcode_card50_backend"
+                print_report_name="'Qrcode-Card-5.0 - %s' % (object.codigocliente)" />
+
+    </data>
+
+
+</odoo>
