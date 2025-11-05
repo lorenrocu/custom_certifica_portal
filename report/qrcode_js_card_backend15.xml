@@ -12,7 +12,7 @@
                             var base = window.location.origin || '';
                             var cm = '1.5';
                             var odooUrl = base + '/web/certificado_current/download_pdf/' + '<t t-esc="doc.id"/>';
-                            var service = 'https://ctf-qr.onrender.com/card?qr=' + encodeURIComponent(odooUrl) + '&cm=' + encodeURIComponent(cm);
+                            var service = 'https://ctf-qr.onrender.com/card?qr=' + encodeURIComponent(odooUrl) + '&amp;cm=' + encodeURIComponent(cm);
 
                             var container = document.getElementById('qrCardContainer');
                             container.textContent = 'Cargando...';
