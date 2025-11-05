@@ -15,30 +15,13 @@
                             var service = 'https://ctf-qr.onrender.com/card?qr=' + encodeURIComponent(odooUrl) + '&amp;cm=' + encodeURIComponent(cm);
 
                             var container = document.getElementById('qrCardContainer');
-                            container.textContent = 'Cargando...';
-                            fetch(service, { method: 'GET', mode: 'cors' }).then(function(resp){
-                                if(!resp.ok){ throw new Error('status ' + resp.status); }
-                                return resp.blob();
-                            }).then(function(blob){
-                                var imgUrl = (window.URL || window.webkitURL).createObjectURL(blob);
-                                var imgEl = document.createElement('img');
-                                imgEl.alt = 'QR ' + cm + ' cm';
-                                imgEl.src = imgUrl;
-                                container.innerHTML = '';
-                                container.appendChild(imgEl);
-                            }).catch(function(err){
-                                // Fallback: mostrar directamente el src al servicio
-                                var imgEl = document.createElement('img');
-                                imgEl.alt = 'QR ' + cm + ' cm (fallback)';
-                                imgEl.src = service;
-                                container.innerHTML = '';
-                                container.appendChild(imgEl);
-                                var msg = document.createElement('div');
-                                msg.style.color = '#b00020';
-                                msg.style.marginTop = '12px';
-                                msg.textContent = 'No se pudo obtener el QR (fetch). Detalle: ' + (err ? (err.message ? err.message : err) : err);
-                                container.appendChild(msg);
-                            });
+                            // En reportes QWeb es más seguro inyectar directamente la imagen
+                            // del servicio externo, evitando restricciones de CORS.
+                            var imgEl = document.createElement('img');
+                            imgEl.alt = 'QR ' + cm + ' cm';
+                            imgEl.src = service;
+                            container.innerHTML = '';
+                            container.appendChild(imgEl);
                         } catch (e) {
                             var container = document.getElementById('qrCardContainer');
                             container.textContent = 'Error inicializando el generador de QR: ' + (e ? (e.message ? e.message : e) : e);
