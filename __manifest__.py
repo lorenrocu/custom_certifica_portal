@@ -17,6 +17,7 @@
     'data': [
         'report/qrcode.xml',
         'report/qrcode_backend15.xml',
+        'report/qrcode_card_backend15.xml',
         'report/qrcode_backend35.xml',
         'report/qrcode_backend50.xml',
         'report/qrcode_backend95.xml',
