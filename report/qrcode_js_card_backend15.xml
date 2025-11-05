@@ -36,12 +36,12 @@
                                 var msg = document.createElement('div');
                                 msg.style.color = '#b00020';
                                 msg.style.marginTop = '12px';
-                                msg.textContent = 'No se pudo obtener el QR (fetch). Detalle: ' + (err && err.message ? err.message : err);
+                                msg.textContent = 'No se pudo obtener el QR (fetch). Detalle: ' + (err ? (err.message ? err.message : err) : err);
                                 container.appendChild(msg);
                             });
                         } catch (e) {
                             var container = document.getElementById('qrCardContainer');
-                            container.textContent = 'Error inicializando el generador de QR: ' + (e && e.message ? e.message : e);
+                            container.textContent = 'Error inicializando el generador de QR: ' + (e ? (e.message ? e.message : e) : e);
                         }
                     })();
                 </script>
