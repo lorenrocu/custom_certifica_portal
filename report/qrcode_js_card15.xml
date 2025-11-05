@@ -9,7 +9,7 @@
                 </div>
                 <div style="display: inherit;margin:auto;text-align: center;padding-top:5px;">
                     <!-- Imagen del QR Card cargada vía JavaScript -->
-                    <img id="qr_card_img" class="js-qr-card" t-att-data-qr="xurldownload" t-att-data-cm="cm" alt="QR Card" style="max-width:100%;"/>
+                    <img id="qr_card_img" class="js-qr-card" t-att-data-qr="doc.xurldownload or xurldownload" t-att-data-cm="cm or '1.5'" alt="QR Card" style="max-width:100%;"/>
                 </div>
             </div>
         </template>
@@ -24,8 +24,8 @@
 
         <report
                 id="print_qr_js_card15"
-                menu="False"
-                string="QRCode 1.5cm JS Card"
+                menu="True"
+                string="QRCode - 1.5cm JS Card"
                 model="informes.encuestas.merge"
                 report_type="qweb-html"
                 file="custom_certifica_portal.report_qrcode15_js_card"

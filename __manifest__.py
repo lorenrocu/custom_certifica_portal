@@ -25,6 +25,7 @@
          'views/templates_personas.xml',
          'views/templates_oiso.xml',
          'views/website_qr_assets.xml',
+         'views/web_qr_assets.xml',
              ],
     'installable': True,
     'application': True,

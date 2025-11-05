@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="assets_backend_qr_card" inherit_id="web.assets_backend" name="QR Card Backend assets">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/custom_certifica_portal/static/src/js/qr_card.js"></script>
+        </xpath>
+    </template>
+
+</odoo>

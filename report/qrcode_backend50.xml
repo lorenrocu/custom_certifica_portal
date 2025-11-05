@@ -20,7 +20,7 @@
 
         <report
                 id="print_qr_backend50"
-                menu="True"
+                menu="False"
                 string="QRCode - 5.0cm"
                 model="informes.encuestas.merge"
                 report_type="qweb-html"
