@@ -5,7 +5,7 @@
         <xpath expr="." position="inside">
 
             <link rel="stylesheet" href="/custom_certifica_portal/static/src/scss/style.scss" />
-            <script type="text/javascript" src="/custom_certifica_portal/static/src/js/qr_card.js"/>
+            <script type="text/javascript" src="/custom_certifica_portal/static/src/js/banner.js"></script>
         </xpath>
     </template>
 

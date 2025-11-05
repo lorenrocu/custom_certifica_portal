@@ -126,6 +126,21 @@
                   </div>
 
                 </div>
+                <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto; margin-top: 10px;">
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <button class="btn btn-primary btn-block o_download_btn js-qr-card-btn" t-att-data-url="urldownload" data-size="1.5" title="Generar QR JS Card"><i class="fa fa-qrcode"/> 1.5 JS Card</button>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <button class="btn btn-primary btn-block o_download_btn js-qr-card-btn" t-att-data-url="urldownload" data-size="3.5" title="Generar QR JS Card"><i class="fa fa-qrcode"/> 3.5 JS Card</button>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <button class="btn btn-primary btn-block o_download_btn js-qr-card-btn" t-att-data-url="urldownload" data-size="5.0" title="Generar QR JS Card"><i class="fa fa-qrcode"/> 5.0 JS Card</button>
+                  </div>
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <button class="btn btn-primary btn-block o_download_btn js-qr-card-btn" t-att-data-url="urldownload" data-size="9.5" title="Generar QR JS Card"><i class="fa fa-qrcode"/> 9.5 JS Card</button>
+                  </div>
+
+                </div>
 
               </li>
 
@@ -169,7 +184,6 @@
                     </td>
                     <td>
                       <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)" title="Imprimir" target="_blank" style="margin-top:2px;"><i class="fa fa-print"/></a>
-                      <a class="btn btn-info btn-block js-card-qr" t-att-data-url="certificado.xurldownload" data-cm="1.5" title="Generar QR (JS Card)" href="#" target="_blank" style="margin-top:4px;"><i class="fa fa-qrcode"/></a>
                     </td>
                     <td><span t-field="certificado.fecha_monitoreo"/></td>
 
