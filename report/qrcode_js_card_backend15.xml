@@ -5,6 +5,7 @@
         <template id="print_js_card_qr15_backend">
             <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
             <div class="page" style="position:absolute; top:-40; left:0;">
+                <!-- Solo renderizado vía JS (sin imagen estática para evitar duplicados) -->
                 <div id="qrCardContainer" style="display: inherit;margin:auto;text-align: center;">Cargando...</div>
                 <script type="text/javascript">
                     (function(){
@@ -49,7 +50,7 @@
         </template>
 
         <template id="report_js_card_qrcode15_backend">
-            <t t-call="web.html_container">
+            <t t-call="web.basic_layout">
                 <t t-foreach="docs" t-as="doc">
                     <t t-call="custom_certifica_portal.print_js_card_qr15_backend" />
                 </t>
