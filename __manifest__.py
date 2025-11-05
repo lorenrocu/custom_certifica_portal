@@ -22,6 +22,7 @@
         'report/qrcode_backend35.xml',
         'report/qrcode_backend50.xml',
         'report/qrcode_backend95.xml',
+        'report/disable_legacy_qr.xml',
         'views/templates.xml',
          'views/templates_personas.xml',
          'views/templates_oiso.xml',

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="False">
+        <!-- Elimina las acciones de reporte antiguas basadas en generador interno -->
+        <delete id="print_qr_backend15" model="ir.actions.report"/>
+        <delete id="print_qr_backend35" model="ir.actions.report"/>
+        <delete id="print_qr_backend50" model="ir.actions.report"/>
+        <delete id="print_qr_backend95" model="ir.actions.report"/>
+    </data>
+</odoo>
