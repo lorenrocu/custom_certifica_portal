@@ -16,14 +16,6 @@ _logger = getLogger(__name__)
 class ProductPlannerPortal(CustomerPortal):
     _inherit = 'ir.actions.report'
 
-    def render_qweb_html(self, docids, data=None):
-        if self.report_name == 'custom_certifica_portal.report_qrcode_card15_backend':
-            docs = self.env[self.model].browse(docids)
-            doc = docs[0]
-            content = doc.xurldownload
-            return (content, 'text/plain')
-        return super(ProductPlannerPortal, self).render_qweb_html(docids, data)
-
     @http.route(['/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>',
                  '/web/ultimocertificado/<string:ruta_url>/<string:id>/<string:userid>/<string:ruta_urlqr>/<string:idcertificado>'], type='http', auth="user",website=True)
     def print_qrcode(self,**kwargs):
