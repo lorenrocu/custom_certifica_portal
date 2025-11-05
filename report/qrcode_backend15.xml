@@ -21,7 +21,7 @@
 
         <report
                 id="print_qr_backend15"
-                menu="False"
+                menu="True"
                 string="QRCode - 1.5cm"
                 model="informes.encuestas.merge"
                 report_type="qweb-html"

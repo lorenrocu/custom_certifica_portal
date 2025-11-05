@@ -60,11 +60,12 @@
 
           <t t-set="title">
             <h3 class="mb-0">INFORMACIÓN RESUMEN</h3>
-            <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', urldownload, 150, 150)"/>
+            <!-- QR generado vía JS Card -->
+            <img id="js-qr-main-oiso" class="js-qr-card" t-att-data-qr-url="urldownload" data-cm="1.5" alt="QR último certificado" style="max-width:150px;"/>
             <h3 class="mb-0">
               <b t-field="maq.name"/>
             </h3>
-            <p>Escaneame para ver el último certificado.</p>
+            <p>Escanéame para ver el último certificado.</p>
           </t>
 
           <t t-set="entries">
@@ -119,25 +120,20 @@
 
                 </div>
 
+                <!-- Selector de tamaño para JS Card (oculta impresión/QWeb) -->
                 <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto;">
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15_js_card')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 1.5 JS Card</a>
+                  <div class="btn-group flex-grow-1 mr-1 mb-1">
+                    <button type="button" class="btn btn-secondary btn-block js-qr-size" data-target="#js-qr-main-oiso" data-cm="1.5"><i class="fa fa-qrcode"/> 1.5 cm</button>
                   </div>
-                  <!-- Opciones anteriores ocultas -->
-                  <!--
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 1.5 cm</a>
+                  <div class="btn-group flex-grow-1 mr-1 mb-1">
+                    <button type="button" class="btn btn-secondary btn-block js-qr-size" data-target="#js-qr-main-oiso" data-cm="3.5"><i class="fa fa-qrcode"/> 3.5 cm</button>
                   </div>
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr35')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 3.5 cm</a>
+                  <div class="btn-group flex-grow-1 mr-1 mb-1">
+                    <button type="button" class="btn btn-secondary btn-block js-qr-size" data-target="#js-qr-main-oiso" data-cm="5.0"><i class="fa fa-qrcode"/> 5.0 cm</button>
                   </div>
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr50')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 5.0 cm</a>
+                  <div class="btn-group flex-grow-1 mr-1 mb-1">
+                    <button type="button" class="btn btn-secondary btn-block js-qr-size" data-target="#js-qr-main-oiso" data-cm="9.5"><i class="fa fa-qrcode"/> 9.5 cm</button>
                   </div>
-                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
-                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr95')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 9.5 cm</a>
-                  </div>
-                  -->
                 </div>
 
               </li>

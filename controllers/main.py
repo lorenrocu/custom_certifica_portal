@@ -31,34 +31,24 @@ class ProductPlannerPortal(CustomerPortal):
             xurldownload = str(urlbase.value)+'/web/certificado_current/download_pdf/'+str(idcertificado)
         else:
             xurldownload = str(urlbase.value)+'/web/ultimocertificado/'+str(strurlruta)+'/'+str(xid)+'/'+str(xuserid)
-        # Determinar tipo de salida segun la ruta solicitada
-        is_js_card = False
-        cm = False
-        if strurl == 'print_qr15':
-            w = 63
-            h = 63
-        if strurl == 'print_qr35':
-            w = 147
-            h = 147
-        if strurl == 'print_qr50':
-            w = 210
-            h = 210
-        if strurl == 'print_qr95':
-            w = 370
-            h = 370
+        if strurl=='print_qr15':
+            w=63
+            h=63
+        if strurl=='print_qr35':
+            w=147
+            h=147
+        if strurl=='print_qr50':
+            w=210
+            h=210
+        if strurl=='print_qr95':
+            w=370
+            h=370
 
-        # Nueva variante JS Card (1.5 cm por ahora)
-        if strurl == 'print_qr15_js_card':
-            is_js_card = True
-            cm = '1.5'
-            report_name = 'custom_certifica_portal.print_qr_js_card15'
-
-        # Construir argumentos para las plantillas
-        docargs = {'xurldownload': xurldownload}
-        if is_js_card:
-            docargs.update({'cm': cm})
-        else:
-            docargs.update({'h': h, 'w': w})
+        docargs = {
+            'xurldownload': xurldownload,
+            'h': h,
+            'w': w,
+        }
 
         response = werkzeug.wrappers.Response()
         if strurlruta=='personas':
@@ -70,18 +60,11 @@ class ProductPlannerPortal(CustomerPortal):
 
         r = certificado
         if r:
-            if is_js_card:
-                # Render HTML para permitir ejecución de JavaScript en el navegador
-                r = request.env.ref(report_name).sudo().render_qweb_html([r.id], docargs)[0]
-                response.data = r
-                response.mimetype = 'text/html'
-            else:
-                r = request.env.ref(report_name).sudo().render_qweb_pdf([r.id], docargs)[0]
-                response.data = r
-                response.mimetype = 'application/pdf'
+            r = request.env.ref(report_name).sudo().render_qweb_pdf([r.id],docargs)[0]
+            response.data = r
         else:
             response.data = ''
-            response.mimetype = 'application/pdf'
+        response.mimetype = 'application/pdf'
         return response
 
     @http.route('/web/equipos/download_pdf/<id>', type='http', auth="public",website=True)
