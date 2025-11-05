@@ -31,13 +31,6 @@ class ProductPlannerPortal(CustomerPortal):
             xurldownload = str(urlbase.value)+'/web/certificado_current/download_pdf/'+str(idcertificado)
         else:
             xurldownload = str(urlbase.value)+'/web/ultimocertificado/'+str(strurlruta)+'/'+str(xid)+'/'+str(xuserid)
-        # Nueva opción: devolver únicamente la URL en texto plano
-        if strurl == 'print_qr_card15':
-            response = werkzeug.wrappers.Response()
-            response.data = xurldownload or ''
-            response.mimetype = 'text/plain'
-            return response
-
         if strurl=='print_qr15':
             w=63
             h=63

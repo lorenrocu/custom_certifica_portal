@@ -17,10 +17,10 @@
     'data': [
         'report/qrcode.xml',
         'report/qrcode_backend15.xml',
-        'report/qrcode_card_backend15.xml',
         'report/qrcode_backend35.xml',
         'report/qrcode_backend50.xml',
         'report/qrcode_backend95.xml',
+        'report/qrcode_backend_card15.xml',
         'views/templates.xml',
          'views/templates_personas.xml',
          'views/templates_oiso.xml',
