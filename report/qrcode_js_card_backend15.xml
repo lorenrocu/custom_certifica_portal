@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Plantilla de reporte HTML que usa JS para obtener la imagen del QR desde el servicio externo -->
+        <template id="print_js_card_qr15_backend">
+            <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
+            <div class="page" style="position:absolute; top:-40; left:0;">
+                <div id="qrCardContainer" style="display: inherit;margin:auto;text-align: center;">Cargando...</div>
+                <script type="text/javascript">
+                    (function(){
+                        try {
+                            var base = window.location.origin || '';
+                            var cm = '1.5';
+                            var odooUrl = base + '/web/certificado_current/download_pdf/' + '<t t-esc="doc.id"/>';
+                            var service = 'https://ctf-qr.onrender.com/card?qr=' + encodeURIComponent(odooUrl) + '&cm=' + encodeURIComponent(cm);
+
+                            var container = document.getElementById('qrCardContainer');
+                            container.textContent = 'Cargando...';
+                            fetch(service, { method: 'GET', mode: 'cors' }).then(function(resp){
+                                if(!resp.ok){ throw new Error('status ' + resp.status); }
+                                return resp.blob();
+                            }).then(function(blob){
+                                var imgUrl = (window.URL || window.webkitURL).createObjectURL(blob);
+                                var imgEl = document.createElement('img');
+                                imgEl.alt = 'QR ' + cm + ' cm';
+                                imgEl.src = imgUrl;
+                                container.innerHTML = '';
+                                container.appendChild(imgEl);
+                            }).catch(function(err){
+                                // Fallback: mostrar directamente el src al servicio
+                                var imgEl = document.createElement('img');
+                                imgEl.alt = 'QR ' + cm + ' cm (fallback)';
+                                imgEl.src = service;
+                                container.innerHTML = '';
+                                container.appendChild(imgEl);
+                                var msg = document.createElement('div');
+                                msg.style.color = '#b00020';
+                                msg.style.marginTop = '12px';
+                                msg.textContent = 'No se pudo obtener el QR (fetch). Detalle: ' + (err && err.message ? err.message : err);
+                                container.appendChild(msg);
+                            });
+                        } catch (e) {
+                            var container = document.getElementById('qrCardContainer');
+                            container.textContent = 'Error inicializando el generador de QR: ' + (e && e.message ? e.message : e);
+                        }
+                    })();
+                </script>
+            </div>
+        </template>
+
+        <template id="report_js_card_qrcode15_backend">
+            <t t-call="web.basic_layout">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="custom_certifica_portal.print_js_card_qr15_backend" />
+                </t>
+            </t>
+        </template>
+
+        <report
+                id="print_js_card_qr_backend15"
+                menu="True"
+                string="QRCode - 1.5 JS Card"
+                model="informes.encuestas.merge"
+                report_type="qweb-html"
+                file="custom_certifica_portal.report_js_card_qrcode15_backend"
+                name="custom_certifica_portal.report_js_card_qrcode15_backend"
+                print_report_name="'Qrcode-1.5-JSCard - %s' % (object.codigocliente)"/>
+
+    </data>
+
+
+</odoo>
