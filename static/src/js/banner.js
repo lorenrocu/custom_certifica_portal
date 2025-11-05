@@ -188,7 +188,7 @@ function downloadQRImage(imageUrl, sizeCm) {
 
 // Inicializar event listeners para los botones JS Card cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    // Usar event delegation para manejar clicks en botones JS Card
+    // Usar event delegation para manejar clicks en botones JS Card del frontend
     document.addEventListener('click', function(e) {
         // Verificar si el click fue en un botón JS Card o en un elemento dentro de él
         const btn = e.target.closest('.js-qr-card-btn');
@@ -205,4 +205,62 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Manejar botones JS Card en el backend (formularios de Odoo)
+    if (typeof odoo !== 'undefined' && odoo.define) {
+        // Usar Odoo framework para interceptar clicks en botones del backend
+        odoo.define('custom_certifica_portal.qr_card_backend', function (require) {
+            'use strict';
+            
+            var FormController = require('web.FormController');
+            var core = require('web.core');
+            
+            FormController.include({
+                _onButtonClicked: function (event) {
+                    var buttonName = event.data.attrs.name;
+                    
+                    // Interceptar clicks en botones JS Card
+                    if (buttonName && buttonName.startsWith('action_generate_qr_js_card_')) {
+                        event.stopPropagation();
+                        var sizeMatch = buttonName.match(/action_generate_qr_js_card_(\d+\.?\d*)/);
+                        if (sizeMatch) {
+                            var sizeCm = parseFloat(sizeMatch[1]);
+                            this._generateQRCardFromBackend(sizeCm);
+                            return;
+                        }
+                    }
+                    
+                    return this._super.apply(this, arguments);
+                },
+                
+                _generateQRCardFromBackend: function (sizeCm) {
+                    var self = this;
+                    var record = this.model.get(this.handle);
+                    var certificadoId = record.res_id;
+                    
+                    if (!certificadoId) {
+                        alert('No se pudo obtener el ID del certificado.');
+                        return;
+                    }
+                    
+                    // Llamar al endpoint para obtener la URL usando RPC
+                    var self = this;
+                    this._rpc({
+                        route: '/web/get_certificado_url/' + certificadoId,
+                        params: {}
+                    }).then(function (result) {
+                        if (result && result.url) {
+                            generateQRCard(result.url, sizeCm);
+                        } else {
+                            var errorMsg = result && result.error ? result.error : 'Error desconocido';
+                            alert('Error al obtener la URL del certificado: ' + errorMsg);
+                        }
+                    }).catch(function (error) {
+                        console.error('Error al obtener URL del certificado:', error);
+                        alert('Error al obtener la URL del certificado. Por favor, intente nuevamente.');
+                    });
+                }
+            });
+        });
+    }
 });

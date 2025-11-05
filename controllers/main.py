@@ -453,3 +453,40 @@ class WebsiteAccount(CustomerPortal):
         })
 
         return values
+
+class QRCardController(http.Controller):
+    
+    @http.route('/web/get_certificado_url/<int:certificado_id>', type='json', auth="user")
+    def get_certificado_url(self, certificado_id, **kwargs):
+        """Obtiene la URL de descarga del certificado para usar en JS Card"""
+        try:
+            certificado = request.env['informes.encuestas.merge'].sudo().browse(certificado_id)
+            if not certificado.exists():
+                return {'error': 'Certificado no encontrado'}
+            
+            urlbase = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
+            base_url = urlbase.value if urlbase else request.httprequest.url_root.rstrip('/')
+            
+            # Si es persona
+            if certificado.personas_id:
+                url = base_url + '/web/certificado_current/download_pdf/' + str(certificado_id)
+            else:
+                # Obtener el código del tipo de documento
+                tipo_doc = certificado.xtipodocumento
+                if not tipo_doc or not tipo_doc.code:
+                    return {'error': 'Tipo de documento no encontrado'}
+                
+                tipo_code = tipo_doc.code
+                
+                # Obtener maquinaria y cliente
+                if certificado.xmaquinaria and certificado.cliente_id:
+                    maquinaria_id = certificado.xmaquinaria.id
+                    cliente_id = certificado.cliente_id.id
+                    url = base_url + '/web/ultimocertificado/' + str(tipo_code) + '/' + str(maquinaria_id) + '/' + str(cliente_id)
+                else:
+                    return {'error': 'Maquinaria o cliente no encontrado'}
+            
+            return {'url': url}
+        except Exception as e:
+            _logger.error('Error al obtener URL del certificado: %s', str(e))
+            return {'error': str(e)}

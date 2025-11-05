@@ -9,4 +9,10 @@
         </xpath>
     </template>
 
+    <template id="ow_portal_certifica_backend" inherit_id="web.assets_backend">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/custom_certifica_portal/static/src/js/banner.js"></script>
+        </xpath>
+    </template>
+
 </odoo>
