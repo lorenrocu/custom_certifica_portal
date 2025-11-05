@@ -17,11 +17,7 @@
     'data': [
         'views/assets.xml',
         'report/qrcode.xml',
-        'report/qrcode_backend15.xml',
         'report/qrcode_js_card_backend15.xml',
-        'report/qrcode_backend35.xml',
-        'report/qrcode_backend50.xml',
-        'report/qrcode_backend95.xml',
         'report/disable_legacy_qr.xml',
         'views/templates.xml',
          'views/templates_personas.xml',
