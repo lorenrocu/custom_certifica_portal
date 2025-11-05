@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Plantilla de reporte HTML que usa JS para obtener la imagen del QR desde el servicio externo -->
-        <template id="print_js_card_qr15_backend">
+        <template id="print_js_card_qr35_backend">
             <t t-set="doc" t-value="doc.with_context({'lang':doc.create_uid.lang})" />
             <div class="page" style="position:absolute; top:-40; left:0;">
                 <div id="qrCardContainer" style="display: inherit;margin:auto;text-align: center;">Cargando...</div>
@@ -10,7 +9,7 @@
                     (function(){
                         try {
                             var base = window.location.origin || '';
-                            var cm = '1.5';
+                            var cm = '3.5';
                             var odooUrl = base + '/web/certificado_current/download_pdf/' + '<t t-esc="doc.id"/>';
                             var service = 'https://ctf-qr.onrender.com/card?qr=' + encodeURIComponent(odooUrl) + '&amp;cm=' + encodeURIComponent(cm);
 
@@ -48,25 +47,23 @@
             </div>
         </template>
 
-        <template id="report_js_card_qrcode15_backend">
+        <template id="report_js_card_qrcode35_backend">
             <t t-call="web.html_container">
                 <t t-foreach="docs" t-as="doc">
-                    <t t-call="custom_certifica_portal.print_js_card_qr15_backend" />
+                    <t t-call="custom_certifica_portal.print_js_card_qr35_backend" />
                 </t>
             </t>
         </template>
 
         <report
-                id="print_js_card_qr_backend15"
+                id="print_js_card_qr_backend35"
                 menu="True"
-                string="QRCode - 1.5 JS Card"
+                string="QRCode - 3.5 JS Card"
                 model="informes.encuestas.merge"
                 report_type="qweb-html"
-                file="custom_certifica_portal.report_js_card_qrcode15_backend"
-                name="custom_certifica_portal.report_js_card_qrcode15_backend"
-                print_report_name="'Qrcode-1.5-JSCard - %s' % (object.codigocliente)"/>
+                file="custom_certifica_portal.report_js_card_qrcode35_backend"
+                name="custom_certifica_portal.report_js_card_qrcode35_backend"
+                print_report_name="'Qrcode-3.5-JSCard - %s' % (object.codigocliente)"/>
 
     </data>
-
-
 </odoo>
