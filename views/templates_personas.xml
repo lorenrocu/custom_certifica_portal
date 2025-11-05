@@ -168,7 +168,10 @@
                       <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('QR', certificado.xurldownload, 50, 50)" style="margin-bottom:20px;"/>
                     </td>
                     <td>
+                      <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15_js_card/')+str(certificado.id)" title="Imprimir" target="_blank" style="margin-top:2px;"><i class="fa fa-print"/> 1.5 JS Card</a>
+                      <!-- Opción anterior oculta
                       <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15/')+str(certificado.id)" title="Imprimir" target="_blank" style="margin-top:2px;"><i class="fa fa-print"/></a>
+                      -->
                     </td>
                     <td><span t-field="certificado.fecha_monitoreo"/></td>
 

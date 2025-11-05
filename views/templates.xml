@@ -159,6 +159,11 @@
                 </div>
                 <div class="o_download_pdf btn-toolbar flex-sm-nowrap" style="width: 100%;margin: auto;">
                   <div class="btn-group  flex-grow-1 mr-1 mb-1">
+                    <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15_js_card')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 1.5 JS Card</a>
+                  </div>
+                  <!-- Opciones anteriores ocultas -->
+                  <!--
+                  <div class="btn-group  flex-grow-1 mr-1 mb-1">
                     <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr15')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 1.5 cm</a>
                   </div>
                   <div class="btn-group  flex-grow-1 mr-1 mb-1">
@@ -170,7 +175,7 @@
                   <div class="btn-group  flex-grow-1 mr-1 mb-1">
                     <a class="btn btn-secondary btn-block o_download_btn" t-att-href="str(urldownload)+str('/print_qr95')" title="Imprimir" target="_blank"><i class="fa fa-print"/> 9.5 cm</a>
                   </div>
-
+                  -->
                 </div>
 
 
