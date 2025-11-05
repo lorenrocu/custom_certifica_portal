@@ -12,7 +12,7 @@
     'author': "Piotr Cierkosz",
     'website': "https://www.cier.tech",
     'category': 'Sales',
-    'version': '13.0.1.0.1',
+    'version': '13.0.1.0.2',
     'depends': ['portal'],
     'data': [
         'report/qrcode.xml',
