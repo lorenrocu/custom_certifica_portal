@@ -26,7 +26,7 @@
                 report_type="qweb-html"
                 file="custom_certifica_portal.report_qrcode_card15_backend"
                 name="custom_certifica_portal.report_qrcode_card15_backend"
-                print_report_name="'Qrcode-Card-1.5 - %s' % (object.codigocliente)" />
+                print_report_name="'Qrcode-Card-1.5 - %s.txt' % (object.codigocliente)" />
 
     </data>
 
