@@ -15,12 +15,12 @@
     'version': '13.0.1.0.2',
     'depends': ['portal'],
     'data': [
+        'views/assets.xml',
         'report/qrcode.xml',
         'report/qrcode_backend15.xml',
         'report/qrcode_backend35.xml',
         'report/qrcode_backend50.xml',
         'report/qrcode_backend95.xml',
-        'views/assets.xml',
         'views/templates.xml',
          'views/templates_personas.xml',
          'views/templates_oiso.xml',
